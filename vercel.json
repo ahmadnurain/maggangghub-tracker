@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/vacancies",
+      "destination": "/api/vacancies"
+    },
+    {
+      "source": "/api/filters",
+      "destination": "/api/filters"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/api/vacancy/:id",
+      "destination": "/api/vacancy/[id]"
+    },
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/public/$1"
+    }
+  ]
+}

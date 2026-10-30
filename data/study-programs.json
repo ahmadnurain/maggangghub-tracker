@@ -1,0 +1,18 @@
+[
+  { "id": "ti", "name": "Teknik Informatika", "aliases": ["teknik informatika", "informatika", "ilmu komputer", "computer science", "it", "rekayasa perangkat lunak", "software engineering"] },
+  { "id": "si", "name": "Sistem Informasi", "aliases": ["sistem informasi", "information systems", "manajemen informatika", "sistem teknologi informasi"] },
+  { "id": "te", "name": "Teknik Komputer / Elektro", "aliases": ["teknik komputer", "computer engineering", "teknik elektro", "electrical engineering", "jaringan", "telekomunikasi"] },
+  { "id": "dkv", "name": "Desain Komunikasi Visual (DKV)", "aliases": ["dkv", "desain komunikasi visual", "desain grafis", "multimedia", "animasi", "seni rupa", "desain produk"] },
+  { "id": "akt", "name": "Akuntansi", "aliases": ["akuntansi", "accounting", "keuangan", "perpajakan", "pajak", "finance"] },
+  { "id": "man", "name": "Manajemen", "aliases": ["manajemen", "management", "manajemen bisnis", "administrasi bisnis", "bisnis digital"] },
+  { "id": "adm", "name": "Administrasi Perkantoran / Publik", "aliases": ["administrasi", "administrasi perkantoran", "administrasi publik", "manajemen perkantoran", "sekretaris", "kearsipan"] },
+  { "id": "ilkom", "name": "Ilmu Komunikasi", "aliases": ["ilmu komunikasi", "komunikasi", "hubungan masyarakat", "public relations", "jurnalistik", "broadcasting", "penyiaran"] },
+  { "id": "huk", "name": "Hukum", "aliases": ["ilmu hukum", "hukum", "hukum bisnis", "legal"] },
+  { "id": "psi", "name": "Psikologi", "aliases": ["psikologi", "psychology", "psikologi industri", "sdm", "hrd"] },
+  { "id": "kes", "name": "Kesehatan / Medis", "aliases": ["kedokteran", "keperawatan", "kesehatan masyarakat", "farmasi", "gizi", "analis kesehatan", "teknologi laboratorium medis"] },
+  { "id": "sipil", "name": "Teknik Sipil & Arsitektur", "aliases": ["teknik sipil", "arsitektur", "perencanaan wilayah dan kota", "pwk"] },
+  { "id": "mesin", "name": "Teknik Mesin & Industri", "aliases": ["teknik mesin", "teknik industri", "otomotif", "mekatronika"] },
+  { "id": "pertanian", "name": "Pertanian & Agribisnis", "aliases": ["agribisnis", "agroteknologi", "kehutanan", "perikanan", "peternakan"] },
+  { "id": "pariwisata", "name": "Pariwisata & Perhotelan", "aliases": ["pariwisata", "perhotelan", "tata boga", "hospitality"] },
+  { "id": "stat", "name": "Statistika & Sains Data", "aliases": ["statistika", "sains data", "data science", "matematika"] }
+]

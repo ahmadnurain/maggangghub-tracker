@@ -1,0 +1,238 @@
+[
+  {
+    "id": "01a181e8-1c07-718c-9215-4e0eff9c1003",
+    "positionName": "Tenaga Teknis Survei & Pemetaan",
+    "quantityNeeded": 23,
+    "approvedQuantity": 23,
+    "totalApplications": 0,
+    "competitiveScore": 100,
+    "opportunityScore": 23,
+    "taskDescription": "1. Melakukan pengumpulan data spasial bidang tanah melalui pengukuran terestris dan/atau ploting menggunakan GPS handheld atau aplikasi mobile (Avenza Maps, Locus, dll) 2. Melakukan deliniasi batas bidang tanah pada peta kerja serta pengambilan titik koordinat (geotagging) dan foto geotag bidang tanah 3. Melakukan identifikasi dan inventarisasi bidang tanah kategori KW 4,5,6 berdasarkan data KKP 4. Mengolah data spasial hasil survei (overlay, editing, topologi) menggunakan software GIS 5. Membantu penyusunan geodatabase dan pelaporan hasil pemutakhiran data.",
+    "educationLevels": [
+      "diploma",
+      "bachelor"
+    ],
+    "studyProgramId": "01adcf3d-38b4-40a0-a22e-40f263460416",
+    "studyProgram": {
+      "id": "01adcf3d-38b4-40a0-a22e-40f263460416",
+      "name": "Perencanaan Tata Ruang Wilayah dan Kota"
+    },
+    "studyPrograms": [
+      {
+        "id": "01adcf3d-38b4-40a0-a22e-40f263460416",
+        "name": "Perencanaan Tata Ruang Wilayah dan Kota"
+      },
+      {
+        "id": "03b570a2-c678-4413-aa47-bfed8308fac5",
+        "name": "Teknik Informatika"
+      },
+      {
+        "id": "6864a656-d0ef-4697-b780-178bb668e033",
+        "name": "Geografi"
+      },
+      {
+        "id": "89f734ba-bbc6-4781-a628-7939d5ed1501",
+        "name": "Teknik Geodesi Dan Geomatika"
+      },
+      {
+        "id": "953c587c-1cda-4a36-9bea-dc4416c28d99",
+        "name": "Pertanahan"
+      }
+    ],
+    "organizer": {
+      "id": "01a181c7-d18c-73dd-aeda-808bb8f0d5d0",
+      "name": "Kantor Pertanahan  Kabupaten Mukomuko",
+      "email": "dedyelwis@gmail.com",
+      "phone": null,
+      "address": null,
+      "cityId": null,
+      "city": null,
+      "organizableType": "government",
+      "description": null,
+      "logoUrl": "https://api.kemnaker.go.id/maganghub/onboarding/v2/organizers/01a181c7-d18c-73dd-aeda-808bb8f0d5d0/logo"
+    },
+    "workingDaysPerWeek": 5,
+    "daysOff": [
+      "sunday",
+      "saturday"
+    ],
+    "interviewTypes": [
+      "onsite"
+    ],
+    "isDisabilityFriendly": true,
+    "cityId": "088f3680-eab6-4505-b215-3a130dd30fc7",
+    "city": {
+      "id": "088f3680-eab6-4505-b215-3a130dd30fc7",
+      "code": "1706",
+      "name": "Kab. Muko Muko",
+      "provinceId": "d078e36e-6d89-45be-86b6-cba20fb53e89",
+      "provinceName": null,
+      "type": null,
+      "postalCode": null
+    },
+    "latitude": "-2.6449114",
+    "longitude": "101.4339148",
+    "address": "F424+5MC, Bandar Ratu, Kec. Kota Mukomuko, Kabupaten Mukomuko, Bengkulu 38714",
+    "publishedAt": "2026-10-30T22:15:36+07:00",
+    "createdAt": "2026-10-28T16:47:14+07:00",
+    "updatedAt": "2026-10-30T22:15:36+07:00"
+  },
+  {
+    "id": "01a167ae-0745-7175-9029-6e96d79d33bd",
+    "positionName": "Perawat",
+    "quantityNeeded": 20,
+    "approvedQuantity": 20,
+    "totalApplications": 1,
+    "competitiveScore": 100,
+    "opportunityScore": 19,
+    "taskDescription": "pemberian asuhan keperawatan, pemantauan kondisi pasien, serta kerja sama dengan tim medis lainnya",
+    "educationLevels": [
+      "profession"
+    ],
+    "studyProgramId": "1b10c018-7e0a-4f55-9d0d-07ffdbc1b12b",
+    "studyProgram": {
+      "id": "1b10c018-7e0a-4f55-9d0d-07ffdbc1b12b",
+      "name": "Keperawatan"
+    },
+    "studyPrograms": [
+      {
+        "id": "1b10c018-7e0a-4f55-9d0d-07ffdbc1b12b",
+        "name": "Keperawatan"
+      }
+    ],
+    "organizer": {
+      "id": "01a16320-22ff-7163-9687-efa833868e30",
+      "name": "Rumah Sakit Umum Daerah Kraton Kabupaten Pekalongan",
+      "email": "rsudkraton@yahoo.co.id",
+      "phone": "(0285) 421621-423523",
+      "address": "Jl. Veteran No.31",
+      "cityId": "0c7ce693-c4b2-47d9-84f2-8f5794ff847b",
+      "city": {
+        "id": "0c7ce693-c4b2-47d9-84f2-8f5794ff847b",
+        "code": "3375",
+        "name": "Kota Pekalongan",
+        "provinceId": "e1e7e14d-dd38-4e70-9478-b53b5c492778",
+        "provinceName": null,
+        "type": null,
+        "postalCode": null
+      },
+      "organizableType": "company",
+      "description": "RSUD Kraton Kabupaten Pekalongan merupakan RSUD milik Pemerintah Kabupaten Pekalongan Type B Non pendidikan dan merupakan Rumah Sakit Rujukan regional wilayah Karesidenan Pekalongan . RSUD kraton merupakan oraganisasi Pemerintah Daerah yang menerapkan Pola pengelolaan keuangan BLUD ( PPK - BLUD )",
+      "logoUrl": null
+    },
+    "workingDaysPerWeek": 6,
+    "daysOff": [
+      "sunday"
+    ],
+    "interviewTypes": [
+      "onsite"
+    ],
+    "isDisabilityFriendly": false,
+    "cityId": "0c7ce693-c4b2-47d9-84f2-8f5794ff847b",
+    "city": {
+      "id": "0c7ce693-c4b2-47d9-84f2-8f5794ff847b",
+      "code": "3375",
+      "name": "Kota Pekalongan",
+      "provinceId": "e1e7e14d-dd38-4e70-9478-b53b5c492778",
+      "provinceName": null,
+      "type": null,
+      "postalCode": null
+    },
+    "latitude": "-6.8816046",
+    "longitude": "109.6675440",
+    "address": "Jl. Manunggal I No.6, Dukuh, Kec. Pekalongan Utara, Kota Pekalongan, Jawa Tengah 51145",
+    "publishedAt": "2026-10-30T22:26:16+07:00",
+    "createdAt": "2026-10-23T14:33:40+07:00",
+    "updatedAt": "2026-10-31T03:42:14+07:00"
+  },
+  {
+    "id": "01a18204-3e70-71cf-ae7f-b3b04d6f7331",
+    "positionName": "Tenaga Teknis Survei & Pemetaan",
+    "quantityNeeded": 19,
+    "approvedQuantity": 19,
+    "totalApplications": 1,
+    "competitiveScore": 100,
+    "opportunityScore": 18,
+    "taskDescription": "1. Melakukan pengumpulan data spasial bidang tanah melalui\npengukuran terestris dan/atau ploting menggunakan GPS handheld\natau aplikasi mobile (Avenza Maps, Locus, dll)\n2. Melakukan deliniasi batas bidang tanah pada peta kerja serta\npengambilan titik koordinat (geotagging) dan foto geotag bidang tanah\n3. Melakukan identifikasi dan inventarisasi bidang tanah kategori KW\n4,5,6 berdasarkan data KKP\n4. Mengolah data spasial hasil survei (overlay, editing, topologi)\nmenggunakan software GIS\n5. Membantu penyusunan geodatabase dan pelaporan hasil\npemutakhiran data",
+    "educationLevels": [
+      "diploma",
+      "bachelor"
+    ],
+    "studyProgramId": "01adcf3d-38b4-40a0-a22e-40f263460416",
+    "studyProgram": {
+      "id": "01adcf3d-38b4-40a0-a22e-40f263460416",
+      "name": "Perencanaan Tata Ruang Wilayah dan Kota"
+    },
+    "studyPrograms": [
+      {
+        "id": "01adcf3d-38b4-40a0-a22e-40f263460416",
+        "name": "Perencanaan Tata Ruang Wilayah dan Kota"
+      },
+      {
+        "id": "6864a656-d0ef-4697-b780-178bb668e033",
+        "name": "Geografi"
+      },
+      {
+        "id": "90586281-900a-4cee-821e-3ad158837f1a",
+        "name": "Teknik informatika"
+      },
+      {
+        "id": "953c587c-1cda-4a36-9bea-dc4416c28d99",
+        "name": "Pertanahan"
+      },
+      {
+        "id": "afc1a955-f558-4dad-a7d8-bba344f8594b",
+        "name": "Teknik Geodesi"
+      },
+      {
+        "id": "b8525552-e911-47ca-b89e-c71046f2c756",
+        "name": "Teknik Geomatika"
+      }
+    ],
+    "organizer": {
+      "id": "8bffd708-9166-478d-949a-853a49fa93d2",
+      "name": "Kantor Pertanahan  Kabupaten Bondowoso",
+      "email": null,
+      "phone": "082254650090",
+      "address": "Kantor Pertanahan Kabupaten Bondowoso\r\nJl. Imam Bonjol no.5 Kademangan\r\nKec. Bondowoso Kabupaten Bondowoso",
+      "cityId": "8e18ef96-fdaf-460e-98f4-1c5c45657ef9",
+      "city": {
+        "id": "8e18ef96-fdaf-460e-98f4-1c5c45657ef9",
+        "code": "3511",
+        "name": "Kab. Bondowoso",
+        "provinceId": "d5b90b58-bfb2-4afa-b754-d1280dabe9b3",
+        "provinceName": null,
+        "type": null,
+        "postalCode": null
+      },
+      "organizableType": "government",
+      "description": null,
+      "logoUrl": "https://maganghub.kemnaker.go.id/be/v1/storage/uploads/logo/2026/08/c80f3695-82d8-4b64-adaf-63e151c8bc8a.png"
+    },
+    "workingDaysPerWeek": 5,
+    "daysOff": [
+      "saturday",
+      "sunday"
+    ],
+    "interviewTypes": [
+      "onsite"
+    ],
+    "isDisabilityFriendly": false,
+    "cityId": "8e18ef96-fdaf-460e-98f4-1c5c45657ef9",
+    "city": {
+      "id": "8e18ef96-fdaf-460e-98f4-1c5c45657ef9",
+      "code": "3511",
+      "name": "Kab. Bondowoso",
+      "provinceId": "d5b90b58-bfb2-4afa-b754-d1280dabe9b3",
+      "provinceName": null,
+      "type": null,
+      "postalCode": null
+    },
+    "latitude": "-7.9160277",
+    "longitude": "113.8295120",
+    "address": "3RMH+HQX, Jl. Veteran, Mandaluki, Kademangan, Kec. Bondowoso, Kabupaten Bondowoso, Jawa Timur 68217",
+    "publishedAt": "2026-10-30T22:14:16+07:00",
+    "createdAt": "2026-10-28T17:17:58+07:00",
+    "updatedAt": "2026-10-31T01:03:13+07:00"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "name": "magangfinder",
+  "version": "2.0.0",
+  "description": "Smart MagangHub Vacancy Tracker & CV Matcher",
+  "type": "module",
+  "scripts": {
+    "start": "node dev-server.js",
+    "dev": "node dev-server.js",
+    "build": "echo 'No build required for Vanilla JS'"
+  },
+  "keywords": ["maganghub", "kemnaker", "tracker", "cv-matcher", "internship"],
+  "author": "Antigravity Pair",
+  "license": "MIT"
+}

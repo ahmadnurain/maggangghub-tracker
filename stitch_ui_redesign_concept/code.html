@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MagangFinder - Portal Lowongan Magang Resmi Kemnaker RI</title>
+<!-- Material Symbols Outlined font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Plus Jakarta Sans Google Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config verbatim matching Design Tokens -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-container": "#ffcba3",
+            "on-secondary-container": "#006f66",
+            "primary": "#0037b0",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed": "#2f1500",
+            "secondary-fixed": "#89f5e7",
+            "inverse-primary": "#b7c4ff",
+            "on-primary-fixed-variant": "#0039b5",
+            "on-error-container": "#93000a",
+            "tertiary-container": "#8d4b00",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed-variant": "#005049",
+            "tertiary": "#6b3700",
+            "surface-container-low": "#eff4ff",
+            "background": "#f8f9ff",
+            "on-primary-container": "#cad3ff",
+            "surface-tint": "#2151da",
+            "primary-container": "#1d4ed8",
+            "secondary": "#006a61",
+            "surface-container-highest": "#d5e3fc",
+            "secondary-container": "#86f2e4",
+            "surface-container-lowest": "#ffffff",
+            "on-primary": "#ffffff",
+            "inverse-surface": "#233144",
+            "on-background": "#0d1c2e",
+            "on-secondary-fixed": "#00201d",
+            "on-error": "#ffffff",
+            "outline-variant": "#c4c5d7",
+            "surface-variant": "#d5e3fc",
+            "surface-dim": "#ccdbf3",
+            "on-primary-fixed": "#001551",
+            "tertiary-fixed-dim": "#ffb77d",
+            "secondary-fixed-dim": "#6bd8cb",
+            "primary-fixed-dim": "#b7c4ff",
+            "error": "#ba1a1a",
+            "outline": "#747686",
+            "surface-bright": "#f8f9ff",
+            "inverse-on-surface": "#eaf1ff",
+            "primary-fixed": "#dce1ff",
+            "surface-container": "#e6eeff",
+            "error-container": "#ffdad6",
+            "tertiary-fixed": "#ffdcc3",
+            "on-surface-variant": "#434655",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-surface": "#0d1c2e",
+            "surface": "#f8f9ff",
+            "surface-container-high": "#dce9ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2.5rem",
+            "gutter": "1.5rem",
+            "margin": "1.5rem"
+          },
+          "fontFamily": {
+            "display-lg-mobile": [
+              "Plus Jakarta Sans"
+            ],
+            "headline-xl-mobile": [
+              "Plus Jakarta Sans"
+            ],
+            "headline-xl": [
+              "Plus Jakarta Sans"
+            ],
+            "body-sm": [
+              "Plus Jakarta Sans"
+            ],
+            "headline-md": [
+              "Plus Jakarta Sans"
+            ],
+            "display-lg": [
+              "Plus Jakarta Sans"
+            ],
+            "headline-sm": [
+              "Plus Jakarta Sans"
+            ],
+            "headline-lg": [
+              "Plus Jakarta Sans"
+            ],
+            "label-sm": [
+              "Plus Jakarta Sans"
+            ],
+            "label-lg": [
+              "Plus Jakarta Sans"
+            ],
+            "body-lg": [
+              "Plus Jakarta Sans"
+            ],
+            "body-md": [
+              "Plus Jakarta Sans"
+            ],
+            "label-md": [
+              "Plus Jakarta Sans"
+            ]
+          },
+          "fontSize": {
+            "display-lg-mobile": [
+              "32px",
+              {
+                "lineHeight": "40px",
+                "fontWeight": "700"
+              }
+            ],
+            "headline-xl-mobile": [
+              "28px",
+              {
+                "lineHeight": "36px",
+                "fontWeight": "700"
+              }
+            ],
+            "headline-xl": [
+              "36px",
+              {
+                "lineHeight": "44px",
+                "fontWeight": "700"
+              }
+            ],
+            "body-sm": [
+              "12px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "400"
+              }
+            ],
+            "headline-md": [
+              "20px",
+              {
+                "lineHeight": "28px",
+                "fontWeight": "600"
+              }
+            ],
+            "display-lg": [
+              "48px",
+              {
+                "lineHeight": "56px",
+                "fontWeight": "700"
+              }
+            ],
+            "headline-sm": [
+              "18px",
+              {
+                "lineHeight": "26px",
+                "fontWeight": "600"
+              }
+            ],
+            "headline-lg": [
+              "24px",
+              {
+                "lineHeight": "32px",
+                "fontWeight": "600"
+              }
+            ],
+            "label-sm": [
+              "11px",
+              {
+                "lineHeight": "14px",
+                "fontWeight": "500"
+              }
+            ],
+            "label-lg": [
+              "14px",
+              {
+                "lineHeight": "20px",
+                "fontWeight": "600"
+              }
+            ],
+            "body-lg": [
+              "16px",
+              {
+                "lineHeight": "24px",
+                "fontWeight": "400"
+              }
+            ],
+            "body-md": [
+              "14px",
+              {
+                "lineHeight": "22px",
+                "fontWeight": "400"
+              }
+            ],
+            "label-md": [
+              "12px",
+              {
+                "lineHeight": "16px",
+                "fontWeight": "600"
+              }
+            ]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased selection:bg-surface-container-highest selection:text-primary">
+<!-- TOP APP BAR (Shared Component Anchor) -->
+<header class="bg-surface-container-lowest sticky top-0 z-50 border-b border-outline-variant/50">
+<div class="w-full px-gutter md:px-space-xl max-w-[1280px] mx-auto flex items-center justify-between h-16">
+<!-- Brand & Kemnaker Partnership Indicator -->
+<div class="flex items-center gap-space-md">
+<a class="flex items-center gap-2 group" href="#">
+<div class="w-9 h-9 rounded-xl bg-primary-container text-on-primary flex items-center justify-center font-headline-md shadow-sm group-hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-[22px]">work</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">MagangFinder</span>
+</a>
+<!-- Subtle Institutional Verification Tagline -->
+<div class="hidden lg:flex items-center gap-1.5 pl-3 border-l border-outline-variant/60 py-1">
+<span class="inline-block w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-secondary font-medium tracking-tight">Mitra MagangHub &amp; Kemnaker Batch 2 2026</span>
+</div>
+</div>
+<!-- Navigation Links from JSON (Active State Logic: 'Cari Lowongan' active) -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-primary font-semibold border-b-2 border-primary pb-1 font-label-lg text-label-lg transition-colors duration-150" href="#">Cari Lowongan</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 font-label-lg text-label-lg" href="#">Panduan UMK</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 font-label-lg text-label-lg" href="#">Tips Lolos</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-150 font-label-lg text-label-lg" href="#">Bantuan</a>
+</nav>
+<!-- Trailing Action Buttons -->
+<div class="flex items-center gap-space-sm">
+<button class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary px-3 py-2 rounded-xl transition-colors duration-150">
+          Masuk
+        </button>
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-150 shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">upload_file</span>
+<span>Upload CV</span>
+</button>
+</div>
+</div>
+</header>
+<!-- MAIN CANVAS -->
+<main class="max-w-[1280px] mx-auto px-gutter md:px-space-xl py-space-lg">
+<!-- HERO & SEARCH SECTION -->
+<section class="mb-space-xl">
+<!-- Institutional Trust Pill -->
+<div class="inline-flex items-center gap-2 bg-surface-container-high px-3 py-1 rounded-full text-primary text-label-sm font-label-sm mb-3">
+<span class="material-symbols-outlined text-[15px]">verified_user</span>
+<span>Lowongan Terverifikasi Resmi • SK Menaker RI No. 208/2024</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight mb-2">
+        Temukan Lowongan Magang Resmi yang Sesuai untukmu
+      </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl mb-space-lg">
+        Pantau kuota penerimaan, tingkat persaingan pelamar, jurusan yang dicari, dan estimasi uang saku (UMK) terkini secara transparan.
+      </p>
+<!-- Solid Dual-Field Search Box -->
+<div class="bg-surface-container-lowest p-2 md:p-3 rounded-2xl border border-outline-variant shadow-sm flex flex-col md:flex-row items-stretch gap-2">
+<!-- Field 1: Posisi / Instansi -->
+<div class="flex-1 flex items-center gap-3 px-3 py-2 rounded-xl bg-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-outline">search</span>
+<div class="flex-1">
+<label class="block font-label-sm text-label-sm text-on-surface-variant" for="search-position">Posisi atau Instansi</label>
+<input class="w-full bg-transparent border-0 p-0 font-label-lg text-label-lg text-on-surface placeholder:text-outline focus:ring-0" id="search-position" placeholder="Contoh: Programmer, Balai Layanan Digital" type="text" value="Balai Layanan Penghubung Identitas Digital"/>
+</div>
+</div>
+<div class="hidden md:block w-px bg-outline-variant/60 my-1"></div>
+<!-- Field 2: Lokasi / Kota -->
+<div class="md:w-80 flex items-center gap-3 px-3 py-2 rounded-xl bg-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-outline">location_on</span>
+<div class="flex-1">
+<label class="block font-label-sm text-label-sm text-on-surface-variant" for="search-location">Wilayah Penempatan</label>
+<input class="w-full bg-transparent border-0 p-0 font-label-lg text-label-lg text-on-surface placeholder:text-outline focus:ring-0" id="search-location" placeholder="Semua Kota di Indonesia" type="text" value="Kota Depok, Jawa Barat"/>
+</div>
+</div>
+<!-- CTA Action -->
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg px-6 py-3 md:py-2 rounded-xl flex items-center justify-center gap-2 transition-transform duration-100 active:scale-[0.98] shadow-sm">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+<span>Cari Lowongan</span>
+</button>
+</div>
+<!-- Quick Filter Chips Row -->
+<div class="flex items-center gap-2 mt-space-md flex-wrap">
+<span class="font-label-sm text-label-sm text-on-surface-variant mr-1">Filter Populer:</span>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm shadow-xs font-semibold">
+<span>Semua Lowongan (6)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant text-on-surface font-label-sm text-label-sm hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[15px] text-primary">account_balance</span>
+<span>Pemerintah / BUMN</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant text-on-surface font-label-sm text-label-sm hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[15px] text-secondary">trending_down</span>
+<span>Persaingan Ringan (&lt;10 pelamar)</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant text-on-surface font-label-sm text-label-sm hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[15px] text-primary">terminal</span>
+<span>Jurusan IT &amp; Komputer</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant text-on-surface font-label-sm text-label-sm hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[15px] text-secondary">payments</span>
+<span>Gaji / UMK Sesuai Aturan</span>
+</button>
+</div>
+</section>
+<!-- LOCAL CV MATCHING HIGHLIGHT BANNER (Non-SaaS, Human Friendly & Private) -->
+<section class="bg-surface-container-low border border-surface-container-highest rounded-2xl p-space-md mb-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]">shield</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Pencocokan CV Aman &amp; Privat (Lokal Browser)</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ingin mencocokkan CV dengan lowongan di atas? Buka Fitur Pencocok CV lokal tanpa perlu upload data pribadi ke server publik.</p>
+</div>
+</div>
+<button class="shrink-0 bg-surface-container-lowest text-primary hover:bg-surface border border-outline-variant font-label-lg text-label-lg px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition-colors">
+<span class="material-symbols-outlined text-[18px]">rule</span>
+<span>Cek Kecocokan CV Saya</span>
+</button>
+</section>
+<!-- ADVANCED FILTER BAR -->
+<section class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant shadow-xs mb-space-lg">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">filter_list</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Filter Spesifik</span>
+</div>
+<button class="font-label-sm text-label-sm text-primary hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span>Reset Filter</span>
+</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm">
+<!-- Filter 1: Program Studi -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Program Studi</label>
+<div class="relative">
+<select class="w-full bg-surface border border-outline-variant rounded-xl font-body-md text-body-md text-on-surface py-2 px-3 pr-8 focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+<option selected="">Semua Program Studi</option>
+<option>Teknik Informatika</option>
+<option>Sistem Informasi</option>
+<option>Ilmu Komputer</option>
+<option>Desain Komunikasi Visual</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- Filter 2: Jenjang Pendidikan -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Jenjang Pendidikan</label>
+<div class="relative">
+<select class="w-full bg-surface border border-outline-variant rounded-xl font-body-md text-body-md text-on-surface py-2 px-3 pr-8 focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+<option selected="">D3 / D4 / S1</option>
+<option>Hanya S1</option>
+<option>Hanya D4</option>
+<option>Hanya D3</option>
+<option>SMK / Sederajat</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- Filter 3: Jenis Instansi -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Jenis Instansi</label>
+<div class="relative">
+<select class="w-full bg-surface border border-outline-variant rounded-xl font-body-md text-body-md text-on-surface py-2 px-3 pr-8 focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+<option selected="">Semua Instansi (Kementerian / BUMN / Swasta)</option>
+<option>Lembaga Pemerintah / Balai</option>
+<option>BUMN &amp; Anak Usaha</option>
+<option>Swasta Terakreditasi Kemnaker</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- Filter 4: Tingkat Persaingan -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Tingkat Persaingan</label>
+<div class="relative">
+<select class="w-full bg-surface border border-outline-variant rounded-xl font-body-md text-body-md text-on-surface py-2 px-3 pr-8 focus:border-primary focus:ring-1 focus:ring-primary appearance-none">
+<option selected="">Paling Sedikit Pelamar</option>
+<option>Rasio Kuota Tertinggi (&gt;1)</option>
+<option>Baru Ditambahkan</option>
+<option>Uang Saku Tertinggi</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION TITLE & STATS -->
+<div class="flex items-center justify-between mb-space-md">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Lowongan Magang Tersedia (6 Posisi)</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Penempatan resmi di Balai Layanan Penghubung Identitas Digital, Kota Depok</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Urutan:</span>
+<span class="font-label-sm text-label-sm font-semibold text-primary bg-surface-container px-2 py-1 rounded-lg">Paling Relevan</span>
+</div>
+</div>
+<!-- JOB CARDS GRID (6 Real lowongan) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md mb-space-xl">
+<!-- CARD 1: Programmer -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 hover:border-primary transition-all duration-200 shadow-xs flex flex-col justify-between group">
+<div>
+<!-- Header Card: Logo & Save button -->
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container text-primary flex items-center justify-center font-headline-md shrink-0">
+<span class="material-symbols-outlined text-[26px]">code</span>
+</div>
+<div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded-full font-medium">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+<span>Pemerintah Resmi</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">Programmer</h3>
+</div>
+</div>
+<button aria-label="Simpan Lowongan" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-[22px]">favorite</span>
+</button>
+</div>
+<!-- Instansi & Lokasi -->
+<p class="font-body-md text-body-md text-on-surface-variant mb-1 font-medium">Balai Layanan Penghubung Identitas Digital</p>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[16px] text-outline">pin_drop</span>
+<span>Kota Depok, Jawa Barat (On-site)</span>
+</div>
+<!-- Jurusan yang dicari -->
+<div class="mb-4">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Jurusan Diutamakan:</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Teknik Informatika</span>
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Ilmu Komputer</span>
+<span class="bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-md font-label-sm text-label-sm font-medium">+2 Jurusan</span>
+</div>
+</div>
+<!-- Kuota vs Pelamar Progress Indicator -->
+<div class="bg-surface p-3 rounded-xl border border-outline-variant/60 mb-4">
+<div class="flex justify-between items-center mb-1.5 font-label-sm text-label-sm">
+<span class="text-on-surface font-medium">Kuota: <strong class="text-primary font-bold">1 Orang</strong></span>
+<span class="text-on-surface-variant">Pelamar: <strong>6 Orang</strong> (Rasio 6x)</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 17%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-medium mt-1.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Peluang terbuka: 1 dari 6 pendaftar</span>
+</p>
+</div>
+</div>
+<!-- Card Footer: Gaji & CTA -->
+<div class="pt-3 border-t border-outline-variant/60 flex items-center justify-between gap-2">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Est. UMK / Saku:</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold text-primary">Rp 4.878.612<span class="text-body-sm font-normal text-on-surface-variant">/bln</span></span>
+</div>
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md px-3.5 py-2 rounded-xl transition-all duration-150 active:scale-[0.98]">
+            Lihat Rincian
+          </button>
+</div>
+</article>
+<!-- CARD 2: IT Compliance Staff -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 hover:border-primary transition-all duration-200 shadow-xs flex flex-col justify-between group">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container text-primary flex items-center justify-center font-headline-md shrink-0">
+<span class="material-symbols-outlined text-[26px]">policy</span>
+</div>
+<div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded-full font-medium">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+<span>Pemerintah Resmi</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">IT Compliance Staff</h3>
+</div>
+</div>
+<button aria-label="Simpan Lowongan" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-[22px]">favorite</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-1 font-medium">Balai Layanan Penghubung Identitas Digital</p>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[16px] text-outline">pin_drop</span>
+<span>Kota Depok, Jawa Barat (On-site)</span>
+</div>
+<div class="mb-4">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Jurusan Diutamakan:</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Sistem Informasi</span>
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Manajemen Informatika</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-outline-variant/60 mb-4">
+<div class="flex justify-between items-center mb-1.5 font-label-sm text-label-sm">
+<span class="text-on-surface font-medium">Kuota: <strong class="text-primary font-bold">1 Orang</strong></span>
+<span class="text-on-surface-variant">Pelamar: <strong>6 Orang</strong> (Rasio 6x)</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 17%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-medium mt-1.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Peluang terbuka: 1 dari 6 pendaftar</span>
+</p>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/60 flex items-center justify-between gap-2">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Est. UMK / Saku:</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold text-primary">Rp 4.878.612<span class="text-body-sm font-normal text-on-surface-variant">/bln</span></span>
+</div>
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md px-3.5 py-2 rounded-xl transition-all duration-150 active:scale-[0.98]">
+            Lihat Rincian
+          </button>
+</div>
+</article>
+<!-- CARD 3: Security Engineer -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 hover:border-primary transition-all duration-200 shadow-xs flex flex-col justify-between group">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container text-primary flex items-center justify-center font-headline-md shrink-0">
+<span class="material-symbols-outlined text-[26px]">security</span>
+</div>
+<div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded-full font-medium">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+<span>Pemerintah Resmi</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">Security Engineer</h3>
+</div>
+</div>
+<button aria-label="Simpan Lowongan" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-[22px]">favorite</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-1 font-medium">Balai Layanan Penghubung Identitas Digital</p>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[16px] text-outline">pin_drop</span>
+<span>Kota Depok, Jawa Barat (On-site)</span>
+</div>
+<div class="mb-4">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Jurusan Diutamakan:</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Teknik Informatika</span>
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Keamanan Siber</span>
+<span class="bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-md font-label-sm text-label-sm font-medium">+1 Jurusan</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-outline-variant/60 mb-4">
+<div class="flex justify-between items-center mb-1.5 font-label-sm text-label-sm">
+<span class="text-on-surface font-medium">Kuota: <strong class="text-primary font-bold">1 Orang</strong></span>
+<span class="text-on-surface-variant">Pelamar: <strong>6 Orang</strong> (Rasio 6x)</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 17%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-medium mt-1.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Peluang terbuka: 1 dari 6 pendaftar</span>
+</p>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/60 flex items-center justify-between gap-2">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Est. UMK / Saku:</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold text-primary">Rp 4.878.612<span class="text-body-sm font-normal text-on-surface-variant">/bln</span></span>
+</div>
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md px-3.5 py-2 rounded-xl transition-all duration-150 active:scale-[0.98]">
+            Lihat Rincian
+          </button>
+</div>
+</article>
+<!-- CARD 4: Database Engineer -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 hover:border-primary transition-all duration-200 shadow-xs flex flex-col justify-between group">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container text-primary flex items-center justify-center font-headline-md shrink-0">
+<span class="material-symbols-outlined text-[26px]">database</span>
+</div>
+<div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded-full font-medium">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+<span>Pemerintah Resmi</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">Database Engineer</h3>
+</div>
+</div>
+<button aria-label="Simpan Lowongan" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-[22px]">favorite</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-1 font-medium">Balai Layanan Penghubung Identitas Digital</p>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[16px] text-outline">pin_drop</span>
+<span>Kota Depok, Jawa Barat (On-site)</span>
+</div>
+<div class="mb-4">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Jurusan Diutamakan:</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Teknik Informatika</span>
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Sains Data</span>
+<span class="bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-md font-label-sm text-label-sm font-medium">+2 Jurusan</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-outline-variant/60 mb-4">
+<div class="flex justify-between items-center mb-1.5 font-label-sm text-label-sm">
+<span class="text-on-surface font-medium">Kuota: <strong class="text-primary font-bold">1 Orang</strong></span>
+<span class="text-on-surface-variant">Pelamar: <strong>7 Orang</strong> (Rasio 7x)</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 14%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-medium mt-1.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Peluang terbuka: 1 dari 7 pendaftar</span>
+</p>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/60 flex items-center justify-between gap-2">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Est. UMK / Saku:</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold text-primary">Rp 4.878.612<span class="text-body-sm font-normal text-on-surface-variant">/bln</span></span>
+</div>
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md px-3.5 py-2 rounded-xl transition-all duration-150 active:scale-[0.98]">
+            Lihat Rincian
+          </button>
+</div>
+</article>
+<!-- CARD 5: Network Engineer -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 hover:border-primary transition-all duration-200 shadow-xs flex flex-col justify-between group">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container text-primary flex items-center justify-center font-headline-md shrink-0">
+<span class="material-symbols-outlined text-[26px]">lan</span>
+</div>
+<div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded-full font-medium">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+<span>Pemerintah Resmi</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">Network Engineer</h3>
+</div>
+</div>
+<button aria-label="Simpan Lowongan" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-[22px]">favorite</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-1 font-medium">Balai Layanan Penghubung Identitas Digital</p>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[16px] text-outline">pin_drop</span>
+<span>Kota Depok, Jawa Barat (On-site)</span>
+</div>
+<div class="mb-4">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Jurusan Diutamakan:</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Teknik Komputer</span>
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Sistem Informasi</span>
+<span class="bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-md font-label-sm text-label-sm font-medium">+2 Jurusan</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-outline-variant/60 mb-4">
+<div class="flex justify-between items-center mb-1.5 font-label-sm text-label-sm">
+<span class="text-on-surface font-medium">Kuota: <strong class="text-primary font-bold">1 Orang</strong></span>
+<span class="text-on-surface-variant">Pelamar: <strong>7 Orang</strong> (Rasio 7x)</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 14%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-medium mt-1.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Peluang terbuka: 1 dari 7 pendaftar</span>
+</p>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/60 flex items-center justify-between gap-2">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Est. UMK / Saku:</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold text-primary">Rp 4.878.612<span class="text-body-sm font-normal text-on-surface-variant">/bln</span></span>
+</div>
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md px-3.5 py-2 rounded-xl transition-all duration-150 active:scale-[0.98]">
+            Lihat Rincian
+          </button>
+</div>
+</article>
+<!-- CARD 6: Desain Visual / Content Creator -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 hover:border-primary transition-all duration-200 shadow-xs flex flex-col justify-between group">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container text-primary flex items-center justify-center font-headline-md shrink-0">
+<span class="material-symbols-outlined text-[26px]">palette</span>
+</div>
+<div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded-full font-medium">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+<span>Pemerintah Resmi</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">Desain Visual / Content</h3>
+</div>
+</div>
+<button aria-label="Simpan Lowongan" class="text-outline hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-[22px]">favorite</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-1 font-medium">Balai Layanan Penghubung Identitas Digital</p>
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[16px] text-outline">pin_drop</span>
+<span>Kota Depok, Jawa Barat (On-site)</span>
+</div>
+<div class="mb-4">
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Jurusan Diutamakan:</span>
+<div class="flex flex-wrap gap-1.5">
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">DKV</span>
+<span class="bg-surface-container-low text-primary px-2 py-0.5 rounded-md font-label-sm text-label-sm">Multimedia Digital</span>
+<span class="bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-md font-label-sm text-label-sm font-medium">+4 Jurusan</span>
+</div>
+</div>
+<div class="bg-surface p-3 rounded-xl border border-outline-variant/60 mb-4">
+<div class="flex justify-between items-center mb-1.5 font-label-sm text-label-sm">
+<span class="text-on-surface font-medium">Kuota: <strong class="text-primary font-bold">4 Orang</strong></span>
+<span class="text-on-surface-variant">Pelamar: <strong>25 Orang</strong> (Rasio 6.3x)</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 16%"></div>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-medium mt-1.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Peluang terbuka: 4 dari 25 pendaftar</span>
+</p>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/60 flex items-center justify-between gap-2">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Est. UMK / Saku:</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold text-primary">Rp 4.878.612<span class="text-body-sm font-normal text-on-surface-variant">/bln</span></span>
+</div>
+<button class="bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md px-3.5 py-2 rounded-xl transition-all duration-150 active:scale-[0.98]">
+            Lihat Rincian
+          </button>
+</div>
+</article>
+</div>
+<!-- CIVIC PROCESS & BENEFIT BANNER -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-space-lg mb-space-xl">
+<div class="max-w-3xl mb-space-md">
+<h3 class="font-headline-md text-headline-md text-on-surface font-bold">Transparansi Hak Peserta Magang Resmi</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Setiap posisi magang yang tampil pada MagangFinder dilindungi regulasi resmi Kementerian Ketenagakerjaan RI.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-space-md">
+<div class="p-4 rounded-xl bg-surface border border-outline-variant/50">
+<span class="material-symbols-outlined text-primary text-[28px] mb-2">payments</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-1">Uang Saku Standar UMK</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Besaran uang saku disesuaikan dengan ketentuan upah minimum daerah penempatan.</p>
+</div>
+<div class="p-4 rounded-xl bg-surface border border-outline-variant/50">
+<span class="material-symbols-outlined text-primary text-[28px] mb-2">health_and_safety</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-1">Jaminan Sosial BPJS TK</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Terlindungi Jaminan Kecelakaan Kerja (JKK) dan Jaminan Kematian (JKM) selama magang.</p>
+</div>
+<div class="p-4 rounded-xl bg-surface border border-outline-variant/50">
+<span class="material-symbols-outlined text-primary text-[28px] mb-2">workspace_premium</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-1">Sertifikat Resmi Kemnaker</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mendapatkan e-sertifikat kompetensi yang terdaftar dalam pangkalan data nasional.</p>
+</div>
+<div class="p-4 rounded-xl bg-surface border border-outline-variant/50">
+<span class="material-symbols-outlined text-primary text-[28px] mb-2">school</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-1">Konversi 20 SKS</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Dapat dikonversikan ke SKS perkuliahan bagi mahasiswa aktif Kampus Merdeka.</p>
+</div>
+</div>
+</section>
+<!-- TRUST & PARTNERSHIP BADGES -->
+<div class="py-space-md border-y border-outline-variant/60 mb-space-lg flex flex-wrap items-center justify-between gap-space-md">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Terasosiasi &amp; Tersinkronisasi dengan:</span>
+<div class="flex items-center flex-wrap gap-8 opacity-80 grayscale hover:grayscale-0 transition-all">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">corporate_fare</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Kemnaker RI</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">school</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Kampus Merdeka</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">hub</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">MagangHub RI</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">account_balance</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Forum Human Capital BUMN</span>
+</div>
+</div>
+</div>
+</main>
+<!-- FOOTER (Shared Component Anchor) -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant">
+<div class="w-full px-gutter md:px-space-xl py-space-xl max-w-[1280px] mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-5 gap-space-lg mb-space-lg">
+<div class="md:col-span-2">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-7 h-7 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">work</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary font-bold">MagangFinder</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mb-4">
+            Portal agregasi dan transparansi kuota lowongan magang resmi bersertifikasi pemerintah dan BUMN untuk mahasiswa dan alumni vokasi se-Indonesia.
+          </p>
+<div class="flex items-center gap-2 text-secondary font-label-sm text-label-sm font-medium">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Sinkronisasi otomatis setiap 6 jam dari MagangHub</span>
+</div>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-3">Navigasi Program</h4>
+<ul class="space-y-2 font-body-sm text-body-sm text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">Tentang MagangFinder</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Panduan Besaran UMK 2026</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Tips Lolos Seleksi Balai</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Daftar Balai &amp; Lembaga</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-3">Legalitas &amp; Mitra</h4>
+<ul class="space-y-2 font-body-sm text-body-sm text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">Kebijakan Privasi</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Syarat &amp; Ketentuan</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Verifikasi Instansi BUMN &amp; Swasta</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Kanal Pelaporan Pungli</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-3">Dukungan Publik</h4>
+<ul class="space-y-2 font-body-sm text-body-sm text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">Pusat Bantuan Kemnaker</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Call Center: 1500-630</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Layanan Chat WhatsApp</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">FAQ Peserta Magang</a></li>
+</ul>
+</div>
+</div>
+<div class="pt-space-md border-t border-outline-variant/60 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          © 2025 MagangFinder • Kolaborasi Mitra Resmi Pembinaan Penempatan Tenaga Kerja Kemnaker RI. Seluruh hak cipta dilindungi undang-undang.
+        </p>
+<div class="flex items-center gap-4 font-label-sm text-label-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Indonesia (ID)</a>
+<span>•</span>
+<a class="hover:text-primary transition-colors" href="#">Aksesibilitas</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+.npm
+
+# Temporary & Local
+.wrangler/
+.vercel/
+*.log
+scratch_*
+dump_sample.cjs
+test_kemnaker.cjs
+*.zip
+
+# OS Files
+.DS_Store
+Thumbs.db

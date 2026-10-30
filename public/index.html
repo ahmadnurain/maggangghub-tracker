@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>MagangHub Tracker &amp; Smart Matcher — Portal Mandiri Pelamar Magang</title>
+  <meta name="description" content="Lacak kuota magang nasional, rasio persaingan per slot, filter spesifik kecamatan, kabupaten/kota, provinsi, prodi, jenjang, dan pencocokan CV lokal privat."/>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            },
+            accent: {
+              teal: '#0d9488',
+              cyan: '#0891b2',
+              amber: '#d97706',
+              emerald: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      min-height: 100vh;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-out;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-dialog {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 720px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.15);
+      transform: scale(0.98) translateY(6px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-backdrop.open .modal-dialog {
+      transform: scale(1) translateY(0);
+    }
+    .shimmer {
+      background: linear-gradient(90deg, #f8fafc 25%, #e2e8f0 50%, #f8fafc 75%);
+      background-size: 200% 100%;
+      animation: shimmerAnim 1.6s infinite;
+    }
+    @keyframes shimmerAnim {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+  <!-- =========================================================================
+       TOP NAVIGATION BAR
+       ========================================================================= -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-2xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+            <span class="material-symbols-outlined text-[22px]">radar</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Magang<span class="text-blue-600 font-bold">Tracker</span></span>
+              <span class="text-[11px] font-semibold tracking-wide px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200/80">KEMNAKER RI</span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-normal leading-none mt-0.5 hidden sm:block">Pantau Kuota &amp; Peluang Magang Nasional</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Action Nav -->
+      <div class="flex items-center gap-3">
+        <button onclick="openProfileModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer shadow-2xs">
+          <span class="material-symbols-outlined text-[18px] text-slate-600">person_search</span>
+          <span>CV Matcher</span>
+          <span id="nav-profile-badge" class="hidden w-2 h-2 rounded-full bg-emerald-500"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN DASHBOARD
+       ========================================================================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-7">
+
+    <!-- HERO INTRO -->
+    <div class="mb-6">
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+        Pantau Kuota &amp; Peluang MagangHub
+      </h1>
+      <p class="text-sm text-slate-500 mt-1.5 max-w-2xl font-normal leading-relaxed">
+        Data kuota penerimaan, jumlah pelamar, tingkat persaingan, dan estimasi uang saku magang resmi Kemnaker RI.
+      </p>
+    </div>
+
+    <!-- =======================================================================
+         UNIFIED ADVANCED FILTER PANEL (MODERN COCKPIT DESIGN)
+         ======================================================================= -->
+    <section class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 mb-6">
+      
+      <!-- Search & Primary Filter Toolbar -->
+      <div class="flex flex-col gap-3 mb-4 pb-4 border-b border-slate-100">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div class="flex-1 relative">
+            <div class="flex items-center bg-white border border-slate-200 rounded-lg px-3.5 py-2 focus-within:border-slate-800 focus-within:ring-1 focus-within:ring-slate-800 transition-all shadow-xs">
+              <span class="material-symbols-outlined text-slate-400 mr-2 text-[18px]">search</span>
+              <input 
+                type="text" 
+                id="filter-keyword" 
+                placeholder="Cari posisi magang, perusahaan, instansi, atau keahlian..." 
+                class="w-full bg-transparent border-none p-0 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 text-sm font-normal"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="resetAllFilters()" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs">
+              <span class="material-symbols-outlined text-[15px]">restart_alt</span>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sleek Segmented Quick Filters -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs no-scrollbar">
+          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mr-1 shrink-0">Preset:</span>
+          <button onclick="applyQuickFilter('all')" class="quick-filter-chip px-3 py-1 rounded-md border border-slate-900 bg-slate-900 text-white font-medium hover:opacity-90 transition-all cursor-pointer shrink-0">
+            Semua
+          </button>
+          <button onclick="applyQuickFilter('pemerintah')" class="quick-filter-chip px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shrink-0">
+            Instansi Pemerintah
+          </button>
+          <button onclick="applyQuickFilter('perusahaan')" class="quick-filter-chip px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shrink-0">
+            Perusahaan Swasta
+          </button>
+          <button onclick="applyQuickFilter('bachelor')" class="quick-filter-chip px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shrink-0">
+            Sarjana (S1)
+          </button>
+          <button onclick="applyQuickFilter('diploma')" class="quick-filter-chip px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shrink-0">
+            Vokasi (D3/D4)
+          </button>
+          <button onclick="applyQuickFilter('least_applicants')" class="quick-filter-chip px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shrink-0">
+            Persaingan Rendah
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Row 1: Wilayah Penempatan (Provinsi -> Kabupaten/Kota) -->
+      <div class="mb-3">
+        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+          <span>Wilayah Penempatan</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <!-- 1. Provinsi -->
+          <div class="relative">
+            <select id="filter-province" class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs sm:text-sm text-slate-800 font-medium focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 appearance-none cursor-pointer transition-colors">
+              <option value="">Semua Provinsi</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+          </div>
+
+          <!-- 2. Kabupaten / Kota -->
+          <div class="relative">
+            <select id="filter-city" class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs sm:text-sm text-slate-800 font-medium focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 appearance-none cursor-pointer transition-colors">
+              <option value="">Semua Kab / Kota</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Row 2: Kriteria Akademik & Instansi (Prodi, Jenjang, Instansi, Urutkan) -->
+      <div>
+        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+          <span>Kualifikasi &amp; Pengurutan</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+          <!-- 3. Program Studi -->
+          <div class="relative">
+            <select id="filter-prodi" class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs sm:text-sm text-slate-800 font-medium focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 appearance-none cursor-pointer transition-colors">
+              <option value="">Semua Program Studi</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+          </div>
+
+          <!-- 4. Jenjang Pendidikan -->
+          <div class="relative">
+            <select id="filter-education" class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs sm:text-sm text-slate-800 font-medium focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 appearance-none cursor-pointer transition-colors">
+              <option value="">Semua Jenjang</option>
+              <option value="bachelor">Sarjana (S1)</option>
+              <option value="diploma">Diploma (D3 / D4)</option>
+              <option value="vocational">SMK / SMA Sederajat</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+          </div>
+
+          <!-- 5. Tipe Instansi -->
+          <div class="relative">
+            <select id="filter-company-type" class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs sm:text-sm text-slate-800 font-medium focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 appearance-none cursor-pointer transition-colors">
+              <option value="">Semua Tipe Instansi</option>
+              <option value="Pemerintah">Instansi Pemerintah</option>
+              <option value="Perusahaan">Perusahaan Swasta</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+          </div>
+
+          <!-- 6. Urutan Sorting -->
+          <div class="relative">
+            <select id="filter-sort" class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs sm:text-sm text-slate-800 font-medium focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 appearance-none cursor-pointer transition-colors">
+              <option value="least_applicants">Pelamar Terendah</option>
+              <option value="most_applicants">Pelamar Tertinggi</option>
+              <option value="most_quota">Kuota Tertinggi</option>
+              <option value="least_quota">Kuota Terendah</option>
+              <option value="highest_salary">Gaji Tertinggi</option>
+              <option value="lowest_salary">Gaji Terendah</option>
+              <option value="latest">Lowongan Terbaru</option>
+            </select>
+            <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Filter Chips / Tags (Clean, Interactive) -->
+      <div id="active-filter-tags" class="hidden flex flex-wrap items-center gap-2 mt-3.5 pt-3.5 border-t border-slate-100">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         STATS BAR & VIEW CONTROLS
+         ======================================================================= -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-slate-800">
+          Menampilkan <span id="results-count" class="text-slate-900 font-bold">0</span> lowongan magang
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="fetchVacancies(1)" class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer">
+          <span class="material-symbols-outlined text-[15px] text-slate-400">refresh</span>
+          <span>Perbarui</span>
+        </button>
+        <button onclick="toggleQuickSaved()" id="btn-toggle-saved" title="Lowongan Tersimpan" class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:text-rose-600 hover:border-rose-200 transition-colors shadow-xs cursor-pointer">
+          <span class="material-symbols-outlined text-[15px] text-slate-400">favorite</span>
+          <span id="saved-count-pill">Tersimpan (0)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- =======================================================================
+         CARDS FEED CONTAINER (ORIGINAL 2-COLUMN MODERN GRID)
+         ======================================================================= -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" id="cards-container">
+      <!-- Live dynamic cards rendered via app.js -->
+    </div>
+
+    <!-- =======================================================================
+         PAGINATION & LOAD MORE BAR
+         ======================================================================= -->
+    <div id="pagination-controls" class="flex flex-col sm:flex-row items-center justify-between gap-4 py-5 px-6 bg-white border border-slate-200 rounded-xl mb-12 shadow-2xs">
+      <div class="text-xs text-slate-600 font-medium">
+        Menampilkan Halaman <span id="current-page-num" class="font-bold text-slate-900">1</span> dari <span id="total-pages-num" class="font-bold text-slate-900">...</span> 
+        <span class="text-slate-400 mx-1">&bull;</span>
+        Total <span id="total-vacancies-num" class="font-bold text-blue-600">0</span> lowongan nasional
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="btn-load-more" onclick="loadMoreVacancies()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-98">
+          <span class="material-symbols-outlined text-[16px]">add_circle</span>
+          <span>Muat 18 Lowongan Lagi</span>
+        </button>
+
+        <div class="flex items-center gap-1 border-l border-slate-200 pl-3">
+          <button id="btn-prev-page" onclick="changePage(state.currentPage - 1)" class="p-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Sebelumnya">
+            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+          </button>
+          <span id="page-indicator" class="text-xs font-bold text-slate-800 px-2">1</span>
+          <button id="btn-next-page" onclick="changePage(state.currentPage + 1)" class="p-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" title="Halaman Selanjutnya">
+            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL: CV & PROFIL LOKAL SAYA
+       ========================================================================= -->
+  <div class="modal-backdrop" id="profile-modal">
+    <div class="modal-dialog">
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center">
+            <span class="material-symbols-outlined text-[20px]">person_search</span>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">Profil &amp; CV Matcher</h3>
+            <p class="text-xs text-slate-500">Hitung persentase kecocokan kualifikasi Anda secara privat</p>
+          </div>
+        </div>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form id="profile-form" class="overflow-y-auto p-5 flex flex-col gap-4">
+        <div class="bg-brand-50 border border-brand-200 p-3 rounded-xl text-xs text-brand-900 flex items-start gap-2">
+          <span class="material-symbols-outlined text-brand-600 text-[18px] shrink-0 mt-0.5">lock</span>
+          <div>
+            <strong>100% Aman &amp; Privat:</strong> Profil Anda tersimpan lokal di browser (`localStorage`) dan tidak pernah dikirim ke server luar.
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1" for="profile-name">Nama Panggilan</label>
+            <input type="text" id="profile-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm py-2 px-3 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500" placeholder="contoh: Ahmad"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1" for="profile-education">Jenjang Pendidikan</label>
+            <select id="profile-education" class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm py-2 px-3 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+              <option value="">Pilih Jenjang</option>
+              <option value="bachelor">Sarjana (S1)</option>
+              <option value="diploma">Diploma (D3 / D4)</option>
+              <option value="vocational">SMK / SMA</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="profile-prodi">Program Studi / Jurusan</label>
+          <input type="text" id="profile-prodi" class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm py-2 px-3 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500" placeholder="contoh: Teknik Informatika, Sistem Informasi, Manajemen..."/>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="profile-skills">Keahlian Utama (Pisahkan koma)</label>
+          <input type="text" id="profile-skills" class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm py-2 px-3 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500" placeholder="contoh: Python, JavaScript, Figma, Excel, SAP..."/>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="profile-cv">Ringkasan CV / Pengalaman</label>
+          <textarea id="profile-cv" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm py-2 px-3 focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500" placeholder="Salin ringkasan CV Anda untuk pencocokan kata kunci otomatis..."></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeProfileModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-700 shadow-xs">
+            Simpan Profil
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: DETAIL RINCIAN LOWONGAN
+       ========================================================================= -->
+  <div class="modal-backdrop" id="detail-modal">
+    <div class="modal-dialog max-w-[760px] w-full bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200 h-[92vh] flex flex-col my-auto">
+      <!-- Fixed Header -->
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Rincian Informasi MagangHub</span>
+        <button onclick="closeDetailModal()" class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer" title="Tutup">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+      <!-- Scrollable Body (Takes remaining space) -->
+      <div class="p-4 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4" id="detail-modal-body">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+      <!-- Fixed Footer -->
+      <div class="p-4 sm:px-6 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-3 shrink-0">
+        <span class="text-xs text-slate-500 font-medium">Data Resmi Kemnaker RI</span>
+        <div class="flex items-center gap-2">
+          <button onclick="closeDetailModal()" class="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-2xs">
+            Tutup
+          </button>
+          <a id="detail-modal-apply-btn" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-xs">
+            <span>Lamar di MagangHub</span>
+            <span class="material-symbols-outlined text-[15px]">arrow_outward</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1298 @@
+/**
+ * MagangTracker — Independent MagangHub Vacancy & Quota Tracker
+ * Live Backend Query with Regional (Provinsi & Kab/Kota), Academic (Prodi & Jenjang),
+ * Enterprise (Pemerintah & Perusahaan), Dynamic Company Logos, and Precise Sorting.
+ */
+
+const STORAGE_PREFIX = "magangtracker_";
+
+const state = {
+  vacancies: [],
+  isLoading: false,
+  currentPage: 1,
+  totalPages: 1,
+  totalVacancies: 0,
+
+  filters: {
+    keyword: "",
+    province: "",
+    city: "",
+    studyProgram: "",
+    education: "",
+    companyType: "",
+    sort: "least_applicants",
+    onlySaved: false,
+  },
+
+  profile: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "profile")) || {
+    name: "",
+    education: "",
+    studyProgram: "",
+    skills: [],
+    cvText: "",
+  },
+
+  bookmarks: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "bookmarks")) || [],
+  regionsData: [],
+};
+
+let searchDebounceTimer = null;
+
+// =============================================================================
+// Initialization
+// =============================================================================
+document.addEventListener("DOMContentLoaded", () => {
+  setupEventListeners();
+  loadRegionsAndFilters();
+  fetchVacancies(1);
+  updateProfileBadge();
+  updateSavedPill();
+});
+
+// =============================================================================
+// Master Data Loading & Regional Dropdown Binding
+// =============================================================================
+async function loadRegionsAndFilters() {
+  try {
+    const res = await fetch("/api/filters");
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        state.regionsData = json.data.regions || [];
+        populateProvinceDropdown();
+        populateCityDropdown();
+        populateProdiDropdown(json.data.studyPrograms);
+      }
+    }
+  } catch (err) {
+    console.warn("Failed loading master filters:", err);
+  }
+}
+
+function populateProvinceDropdown() {
+  const provSelect = document.getElementById("filter-province");
+  if (!provSelect || !state.regionsData) return;
+
+  provSelect.innerHTML = `<option value="">Semua Provinsi</option>`;
+  state.regionsData.forEach((reg) => {
+    const opt = document.createElement("option");
+    opt.value = reg.name;
+    opt.textContent = reg.name;
+    provSelect.appendChild(opt);
+  });
+}
+
+function populateCityDropdown(selectedProvinceName = "") {
+  const citySelect = document.getElementById("filter-city");
+  if (!citySelect) return;
+
+  citySelect.innerHTML = `<option value="">Semua Kab / Kota</option>`;
+  let cities = [];
+
+  if (selectedProvinceName) {
+    const reg = state.regionsData.find((r) => r.name.toLowerCase() === selectedProvinceName.toLowerCase());
+    if (reg && reg.cities) cities = reg.cities;
+  } else {
+    state.regionsData.forEach((r) => {
+      if (r.cities) cities.push(...r.cities);
+    });
+  }
+
+  const uniqueCities = Array.from(new Set(cities)).sort();
+  uniqueCities.forEach((cityName) => {
+    const opt = document.createElement("option");
+    opt.value = cityName;
+    opt.textContent = cityName;
+    citySelect.appendChild(opt);
+  });
+}
+
+function populateProdiDropdown(prodis = []) {
+  const select = document.getElementById("filter-prodi");
+  if (!select) return;
+
+  select.innerHTML = `<option value="">Semua Program Studi</option>`;
+  const defaultMajors = [
+    "Administrasi",
+    "Administrasi Bisnis",
+    "Akuntansi",
+    "Desain Komunikasi Visual",
+    "Hukum",
+    "Ilmu Komputer",
+    "Ilmu Komunikasi",
+    "Manajemen",
+    "Pariwisata / Perhotelan",
+    "Psikologi",
+    "Sistem Informasi",
+    "Tata Busana",
+    "Teknik Elektro",
+    "Teknik Industri",
+    "Teknik Informatika",
+    "Teknik Mesin",
+    "Teknologi Informasi"
+  ];
+
+  const incoming = (prodis || []).map((p) => p.name);
+  const list = Array.from(new Set([...defaultMajors, ...incoming])).sort();
+
+  list.forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+}
+
+// =============================================================================
+// Live Backend Fetching (Pagination & Load More Support)
+// =============================================================================
+async function fetchVacancies(page = 1, append = false) {
+  state.isLoading = true;
+  state.currentPage = page;
+
+  const btnLoadMore = document.getElementById("btn-load-more");
+  if (btnLoadMore && append) {
+    btnLoadMore.disabled = true;
+    btnLoadMore.innerHTML = `
+      <span class="material-symbols-outlined animate-spin text-[16px]">sync</span>
+      <span>Memuat lowongan berikutnya...</span>
+    `;
+  }
+
+  if (!append) {
+    renderSkeleton();
+  }
+  renderActiveFilterTags();
+
+  const params = new URLSearchParams({
+    page: page,
+    sort: state.filters.sort || "least_applicants",
+  });
+
+  if (state.filters.keyword) params.set("keyword", state.filters.keyword);
+  if (state.filters.province) params.set("province", state.filters.province);
+  if (state.filters.city) params.set("city", state.filters.city);
+  if (state.filters.studyProgram) params.set("prodi", state.filters.studyProgram);
+  if (state.filters.education) params.set("education", state.filters.education);
+  if (state.filters.companyType) params.set("companyType", state.filters.companyType);
+
+  try {
+    const res = await fetch(`/api/vacancies?${params.toString()}`);
+    const json = await res.json();
+
+    if (json.success && Array.isArray(json.items)) {
+      const enriched = json.items.map(enrichVacancyWithUserMatch);
+      if (append) {
+        state.vacancies = [...state.vacancies, ...enriched];
+      } else {
+        state.vacancies = enriched;
+      }
+
+      state.currentPage = json.meta?.currentPage || page;
+      state.totalPages = json.meta?.lastPage || 1;
+      state.totalVacancies = json.meta?.total || state.vacancies.length;
+
+      appendDynamicStudyPrograms(json.items);
+      renderVacancies();
+      updatePaginationUI();
+    } else {
+      if (!append) {
+        renderEmpty(json.message || "Gagal memuat lowongan dari pangkalan data Kemnaker.");
+      }
+    }
+  } catch (err) {
+    if (!append) {
+      renderEmpty("Kendala koneksi ke server.");
+    }
+  } finally {
+    state.isLoading = false;
+    if (btnLoadMore) {
+      btnLoadMore.disabled = false;
+      btnLoadMore.innerHTML = `
+        <span class="material-symbols-outlined text-[16px]">add_circle</span>
+        <span>Muat 18 Lowongan Lagi</span>
+      `;
+    }
+    updatePaginationUI();
+  }
+}
+
+function updatePaginationUI() {
+  const currentEl = document.getElementById("current-page-num");
+  const totalPagesEl = document.getElementById("total-pages-num");
+  const totalVacanciesEl = document.getElementById("total-vacancies-num");
+  const indicatorEl = document.getElementById("page-indicator");
+  const btnPrev = document.getElementById("btn-prev-page");
+  const btnNext = document.getElementById("btn-next-page");
+  const btnLoadMore = document.getElementById("btn-load-more");
+
+  if (currentEl) currentEl.textContent = state.currentPage;
+  if (totalPagesEl) totalPagesEl.textContent = state.totalPages ? state.totalPages.toLocaleString("id-ID") : "1";
+  if (totalVacanciesEl) totalVacanciesEl.textContent = state.totalVacancies ? state.totalVacancies.toLocaleString("id-ID") : state.vacancies.length;
+  if (indicatorEl) indicatorEl.textContent = state.currentPage;
+
+  if (btnPrev) btnPrev.disabled = state.currentPage <= 1;
+  if (btnNext) btnNext.disabled = state.currentPage >= state.totalPages;
+  if (btnLoadMore) {
+    btnLoadMore.style.display = state.currentPage >= state.totalPages ? "none" : "inline-flex";
+  }
+}
+
+window.loadMoreVacancies = function() {
+  if (state.isLoading || state.currentPage >= state.totalPages) return;
+  fetchVacancies(state.currentPage + 1, true);
+};
+
+window.changePage = function(newPage) {
+  if (state.isLoading || newPage < 1 || newPage > state.totalPages) return;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  fetchVacancies(newPage, false);
+};
+
+function appendDynamicStudyPrograms(items) {
+  const select = document.getElementById("filter-prodi");
+  if (!select) return;
+
+  const existing = new Set(Array.from(select.options).map((o) => o.value.toLowerCase()));
+  items.forEach((item) => {
+    if (Array.isArray(item.studyPrograms)) {
+      item.studyPrograms.forEach((sp) => {
+        const clean = (sp || "").trim();
+        if (clean && clean.toLowerCase() !== "semua" && !clean.toLowerCase().includes("semua jurusan") && !existing.has(clean.toLowerCase())) {
+          existing.add(clean.toLowerCase());
+          const opt = document.createElement("option");
+          opt.value = clean;
+          opt.textContent = clean;
+          select.appendChild(opt);
+        }
+      });
+    }
+  });
+}
+
+// =============================================================================
+// Client-Side Smart CV Matcher
+// =============================================================================
+function enrichVacancyWithUserMatch(v) {
+  const p = state.profile;
+  const hasProfile = Boolean(p.studyProgram || (p.skills && p.skills.length) || p.cvText);
+
+  if (!hasProfile) {
+    return { ...v, matchScore: 0, matchBreakdown: null };
+  }
+
+  let score = 0;
+  const breakdown = [];
+  const textCorpus = `${v.title} ${v.company} ${v.description || ""} ${(v.studyPrograms || []).join(" ")}`.toLowerCase();
+
+  // Study program match
+  if (p.studyProgram) {
+    const userP = p.studyProgram.toLowerCase().trim();
+    const acceptsAll = (v.studyPrograms || []).some((sp) => sp.toLowerCase().includes("semua"));
+    const directMatch = (v.studyPrograms || []).some((sp) => {
+      const itemP = sp.toLowerCase();
+      return itemP.includes(userP) || userP.includes(itemP);
+    });
+
+    if (directMatch) {
+      score += 40;
+      breakdown.push(`Jurusan Anda (${p.studyProgram}) diprioritaskan (+40%)`);
+    } else if (acceptsAll) {
+      score += 25;
+      breakdown.push(`Terbuka untuk semua jurusan (+25%)`);
+    }
+  }
+
+  // Skills match
+  if (p.skills && p.skills.length > 0) {
+    const matchedSkills = p.skills.filter((sk) => textCorpus.includes(sk.toLowerCase().trim()));
+    if (matchedSkills.length > 0) {
+      const skillPts = Math.min(35, Math.round((matchedSkills.length / Math.max(1, p.skills.length)) * 35) + 10);
+      score += skillPts;
+      breakdown.push(`Keahlian cocok: ${matchedSkills.slice(0, 3).join(", ")} (+${skillPts}%)`);
+    }
+  }
+
+  // Education level match
+  if (p.education && v.educationLevels && v.educationLevels.length > 0) {
+    const userEdu = p.education.toLowerCase();
+    const isEduMatch = v.educationLevels.some((lvl) => {
+      const l = (lvl || "").toLowerCase();
+      if (userEdu === "bachelor") return l.includes("bachelor") || l.includes("sarjana") || l.includes("s1");
+      if (userEdu === "diploma") return l.includes("diploma") || l.includes("d3") || l.includes("d4");
+      if (userEdu === "vocational") return l.includes("vocational") || l.includes("smk") || l.includes("sma");
+      return l.includes(userEdu);
+    });
+    if (isEduMatch) {
+      score += 15;
+      breakdown.push(`Jenjang pendidikan memenuhi syarat (+15%)`);
+    }
+  }
+
+  return {
+    ...v,
+    matchScore: Math.min(100, score),
+    matchBreakdown: breakdown,
+  };
+}
+
+// =============================================================================
+// Render Vacancies & Active Tags
+// =============================================================================
+function renderVacancies() {
+  const container = document.getElementById("cards-container");
+  if (!container) return;
+
+  let items = [...state.vacancies];
+
+  // Only saved filter
+  if (state.filters.onlySaved) {
+    items = items.filter((v) => state.bookmarks.includes(v.id));
+  }
+
+  // Sorting
+  const sortMode = state.filters.sort;
+  if (sortMode === "least_applicants") {
+    items.sort((a, b) => a.applicants - b.applicants || a.applicantsPerSlot - b.applicantsPerSlot);
+  } else if (sortMode === "most_applicants") {
+    items.sort((a, b) => b.applicants - a.applicants);
+  } else if (sortMode === "most_quota") {
+    items.sort((a, b) => b.quota - a.quota);
+  } else if (sortMode === "least_quota") {
+    items.sort((a, b) => a.quota - b.quota);
+  } else if (sortMode === "highest_salary") {
+    items.sort((a, b) => (b.estimatedUmk || 0) - (a.estimatedUmk || 0));
+  } else if (sortMode === "lowest_salary") {
+    items.sort((a, b) => (a.estimatedUmk || 0) - (b.estimatedUmk || 0));
+  } else if (sortMode === "latest") {
+    items.sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
+  }
+
+  // Update count
+  const countEl = document.getElementById("results-count");
+  if (countEl) {
+    const totalFormatted = state.totalVacancies ? state.totalVacancies.toLocaleString("id-ID") : items.length.toLocaleString("id-ID");
+    countEl.innerHTML = `${items.length.toLocaleString("id-ID")} <span class="text-slate-400 font-normal">dari total ${totalFormatted}</span>`;
+  }
+
+  if (items.length === 0) {
+    renderEmpty("Tidak ditemukan lowongan yang cocok dengan kriteria filter Anda.");
+    return;
+  }
+
+  container.innerHTML = items.map(createOriginalCardHTML).join("");
+}
+
+function renderActiveFilterTags() {
+  const container = document.getElementById("active-filter-tags");
+  if (!container) return;
+
+  const tags = [];
+  const f = state.filters;
+
+  if (f.province) tags.push({ key: "province", label: `Provinsi: ${f.province}` });
+  if (f.city) tags.push({ key: "city", label: `Kota: ${f.city}` });
+  if (f.studyProgram) tags.push({ key: "studyProgram", label: `Prodi: ${f.studyProgram}` });
+  if (f.education) {
+    const eduName = f.education === "bachelor" ? "Sarjana (S1)" : f.education === "diploma" ? "Diploma (D3/D4)" : "SMK/SMA";
+    tags.push({ key: "education", label: `Jenjang: ${eduName}` });
+  }
+  if (f.companyType) tags.push({ key: "companyType", label: `Instansi: ${f.companyType}` });
+
+  if (tags.length === 0) {
+    container.classList.add("hidden");
+    container.innerHTML = "";
+    return;
+  }
+
+  container.classList.remove("hidden");
+  container.innerHTML = tags.map((t) => `
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+      <span>${t.label}</span>
+      <button onclick="removeFilterTag('${t.key}')" class="hover:text-slate-900 font-bold ml-0.5 cursor-pointer">&times;</button>
+    </span>
+  `).join("") + `
+    <button onclick="resetAllFilters()" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-2xs cursor-pointer transition-colors">
+      Reset
+    </button>
+  `;
+}
+
+window.removeFilterTag = function(key) {
+  if (key === "province") {
+    state.filters.province = "";
+    const el = document.getElementById("filter-province");
+    if (el) el.selectedIndex = 0;
+    populateCityDropdown("");
+  } else if (key === "city") {
+    state.filters.city = "";
+    const el = document.getElementById("filter-city");
+    if (el) el.selectedIndex = 0;
+  } else if (key === "studyProgram") {
+    state.filters.studyProgram = "";
+    const el = document.getElementById("filter-prodi");
+    if (el) el.selectedIndex = 0;
+  } else if (key === "education") {
+    state.filters.education = "";
+    const el = document.getElementById("filter-education");
+    if (el) el.selectedIndex = 0;
+  } else if (key === "companyType") {
+    state.filters.companyType = "";
+    const el = document.getElementById("filter-company-type");
+    if (el) el.selectedIndex = 0;
+  }
+
+  fetchVacancies(1);
+};
+
+function renderEmpty(message) {
+  const container = document.getElementById("cards-container");
+  if (!container) return;
+  container.innerHTML = `
+    <div class="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-xs">
+      <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 mx-auto flex items-center justify-center mb-3">
+        <span class="material-symbols-outlined text-[26px]">search_off</span>
+      </div>
+      <h3 class="text-base font-bold text-slate-800 mb-1">Hasil Tidak Ditemukan</h3>
+      <p class="text-xs text-slate-500 max-w-md mx-auto mb-4">${message}</p>
+      <button onclick="resetAllFilters()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer">
+        <span class="material-symbols-outlined text-[15px]">refresh</span>
+        <span>Reset Filter Pencarian</span>
+      </button>
+    </div>
+  `;
+}
+
+// =============================================================================
+// ORIGINAL EXECUTIVE CARD DESIGN WITH REAL COMPANY PHOTO / LOGO
+// =============================================================================
+function createOriginalCardHTML(v) {
+  const isSaved = state.bookmarks.includes(v.id);
+
+  // Peluang calculation
+  let peluangPercent = 100;
+  if (v.quota && v.applicants !== undefined) {
+    if (v.applicants === 0) {
+      peluangPercent = 100;
+    } else {
+      peluangPercent = Math.min(100, Math.round((v.quota / Math.max(v.quota, v.applicants)) * 100));
+    }
+  }
+
+  // Salary format
+  const umkFormatted = `Rp ${(v.estimatedUmk || 3972202).toLocaleString("id-ID")}`;
+
+  // Instansi label & style
+  const isPemerintah = v.companyType === "Pemerintah";
+  const instansiBadge = isPemerintah ? "Pemerintah" : "Swasta";
+  const instansiBadgeClass = isPemerintah
+    ? "bg-slate-100 text-slate-700 border-slate-200"
+    : "bg-slate-50 text-slate-500 border-slate-200/80";
+
+  // Interview method badge (format yang disediakan perusahaan)
+  let interviewBadgeHtml = "";
+  if (v.interviewTypes && v.interviewTypes.length > 0) {
+    const hasOnline = v.interviewTypes.includes("online");
+    const hasOnsite = v.interviewTypes.includes("onsite");
+    let label = "Metode Interview: ";
+    if (hasOnline && hasOnsite) label += "Online & Onsite";
+    else if (hasOnline) label += "Online";
+    else label += "Tatap Muka";
+    
+    interviewBadgeHtml = `
+      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200/80" title="Metode wawancara yang ditentukan perusahaan: ${v.interviewTypes.join(', ')}">
+        <span class="material-symbols-outlined text-[12px] text-blue-600">videocam</span>
+        <span>${label}</span>
+      </span>
+    `;
+  }
+
+  // Working days text (jelas, tanpa singkatan membingungkan)
+  const workDaysText = v.workingDaysPerWeek ? `${v.workingDaysPerWeek} Hari Kerja/Minggu` : null;
+
+  // Ratio explanation
+  const ratioText = v.applicants === 0 ? "Bebas Saingan" : `Rasio 1 : ${Math.max(1, Math.round(v.applicants / (v.quota || 1)))}`;
+
+  // Education text
+  const eduLabels = {
+    diploma: "D3/D4",
+    bachelor: "S1",
+    master: "S2",
+    vocational: "SMK/SMA",
+    profession: "Profesi",
+  };
+  const eduList = (v.educationLevels || ["diploma", "bachelor"]).map((l) => eduLabels[l] || l.toUpperCase()).join(", ");
+
+  // Study programs text
+  let prodiText = "Semua Jurusan";
+  if (v.studyPrograms && v.studyPrograms.length > 0) {
+    const list = v.studyPrograms.slice(0, 2).join(", ");
+    const remaining = v.studyPrograms.length > 2 ? ` +${v.studyPrograms.length - 2}` : "";
+    prodiText = `${list}${remaining}`;
+  }
+
+  // Monogram initials
+  const compInitial = (v.company || "P").substring(0, 2).toUpperCase();
+
+  // Location string
+  const locationText = v.location || v.city || v.province || "Indonesia";
+
+  return `
+    <article class="group bg-white rounded-xl border border-slate-200/90 hover:border-slate-400 hover:shadow-md transition-all duration-150 p-4 sm:p-5 flex flex-col justify-between gap-3.5">
+      
+      <!-- Top Section: Identity + Action -->
+      <div class="flex items-start gap-3.5">
+        <!-- Authentic Logo Container (44x44, crisp border, white bg) -->
+        <div style="width:44px;height:44px;min-width:44px;min-height:44px;" class="rounded-lg border border-slate-200 bg-white p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+          ${v.logo ? `
+            <img 
+              src="${v.logo}" 
+              alt="${v.company}" 
+              style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;"
+              loading="lazy" 
+              referrerpolicy="no-referrer"
+              onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'font-bold text-slate-600 text-xs tracking-wider\\'>${compInitial}</span>';"
+            />
+          ` : `
+            <span class="font-bold text-slate-600 text-xs tracking-wider">${compInitial}</span>
+          `}
+        </div>
+
+        <!-- Position & Company -->
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
+            <span class="text-[11px] font-medium text-slate-500 uppercase tracking-wide truncate max-w-[180px]" title="${v.company}">
+              ${v.company}
+            </span>
+            <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium border ${instansiBadgeClass}">
+              ${instansiBadge}
+            </span>
+            ${interviewBadgeHtml}
+            ${v.matchScore > 0 ? `
+              <span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                <span>CV ${v.matchScore}%</span>
+              </span>
+            ` : ''}
+          </div>
+          <h3 onclick="openDetailModal('${v.id}')" class="text-[14px] sm:text-[15px] font-semibold text-slate-900 leading-snug group-hover:text-blue-600 transition-colors cursor-pointer line-clamp-1" title="${v.title}">
+            ${v.title}
+          </h3>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex items-center gap-1 shrink-0">
+          <button onclick="toggleBookmark('${v.id}')" title="Simpan lowongan" class="p-1 text-slate-400 hover:text-rose-500 rounded-md hover:bg-slate-50 transition-colors cursor-pointer">
+            <span class="material-symbols-outlined text-[19px] ${isSaved ? 'text-rose-500 fill' : ''}">favorite</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Location & Qualification Meta -->
+      <div class="space-y-1 text-xs text-slate-500">
+        <div class="flex items-center justify-between gap-2 truncate">
+          <div class="flex items-center gap-1.5 truncate">
+            <span class="material-symbols-outlined text-[15px] text-slate-400 shrink-0">location_on</span>
+            <span class="truncate text-slate-600 font-normal" title="${locationText}">${locationText}</span>
+          </div>
+          ${workDaysText ? `
+            <span class="text-[11px] text-slate-500 font-medium shrink-0 bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200/80 flex items-center gap-1" title="Hari Kerja: ${v.workingDaysPerWeek} hari dalam seminggu">
+              <span class="material-symbols-outlined text-[13px] text-slate-400">calendar_today</span>
+              <span>${v.workingDaysPerWeek} Hari / Minggu</span>
+            </span>
+          ` : ''}
+        </div>
+        <div class="flex items-center gap-1.5 truncate">
+          <span class="material-symbols-outlined text-[15px] text-slate-400 shrink-0">school</span>
+          <span class="truncate text-slate-600 font-normal" title="${eduList} &bull; ${prodiText}">
+            ${eduList} &bull; <span class="text-slate-700 font-medium">${prodiText}</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Minimalist High-Density Metrics Strip -->
+      <div class="flex items-center justify-between text-xs py-2 px-3 rounded-lg bg-slate-50 border border-slate-100">
+        <div class="flex items-center gap-3">
+          <div>
+            <span class="text-[11px] text-slate-400">Kuota</span>
+            <span class="font-semibold text-slate-800 ml-1">${v.quota}</span>
+          </div>
+          <span class="text-slate-200 font-light">|</span>
+          <div>
+            <span class="text-[11px] text-slate-400">Pelamar</span>
+            <span class="font-semibold text-slate-800 ml-1">${v.applicants}</span>
+          </div>
+          <span class="text-slate-200 font-light">|</span>
+          <div class="flex items-center gap-1">
+            <span class="text-[11px] text-slate-400">Peluang</span>
+            <span class="font-semibold text-blue-600 ml-1">${peluangPercent}%</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="font-semibold text-slate-900">${umkFormatted}</span>
+          <span class="text-[10px] text-slate-400 font-normal">/bln</span>
+        </div>
+      </div>
+
+      <!-- Footer CTA Buttons -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+        <div class="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full ${v.applicants === 0 ? 'bg-blue-600' : 'bg-slate-400'}"></span>
+          <span>${ratioText}</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="openDetailModal('${v.id}')" class="px-3 py-1.5 rounded-md border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors cursor-pointer">
+            Rincian Lengkap
+          </button>
+          <a href="${v.sourceUrl}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium flex items-center gap-1 transition-all active:scale-[0.98]">
+            <span>Lamar</span>
+            <span class="material-symbols-outlined text-[13px]">arrow_outward</span>
+          </a>
+        </div>
+      </div>
+
+    </article>
+  `;
+}
+
+function renderSkeleton() {
+  const container = document.getElementById("cards-container");
+  if (!container) return;
+
+  container.innerHTML = Array.from({ length: 4 }).map(() => `
+    <div class="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-3.5">
+      <div class="flex items-start gap-3.5">
+        <div class="w-11 h-11 rounded-lg shimmer shrink-0"></div>
+        <div class="flex-1 flex flex-col gap-1.5 pt-0.5">
+          <div class="h-3 w-1/4 shimmer rounded"></div>
+          <div class="h-4 w-3/4 shimmer rounded"></div>
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <div class="h-3 w-1/2 shimmer rounded"></div>
+        <div class="h-3 w-2/3 shimmer rounded"></div>
+      </div>
+      <div class="h-9 w-full shimmer rounded-lg"></div>
+      <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+        <div class="h-3 w-1/4 shimmer rounded"></div>
+        <div class="h-7 w-20 shimmer rounded-md"></div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// =============================================================================
+// Event Handlers & Filter Bindings
+// =============================================================================
+function setupEventListeners() {
+  // 1. Keyword search
+  const kwInput = document.getElementById("filter-keyword");
+  if (kwInput) {
+    kwInput.addEventListener("input", (e) => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        state.filters.keyword = e.target.value.trim();
+        fetchVacancies(1);
+      }, 350);
+    });
+    kwInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        clearTimeout(searchDebounceTimer);
+        state.filters.keyword = kwInput.value.trim();
+        fetchVacancies(1);
+      }
+    });
+  }
+
+  // 2. Provinsi filter
+  const provSelect = document.getElementById("filter-province");
+  if (provSelect) {
+    provSelect.addEventListener("change", (e) => {
+      state.filters.province = e.target.value;
+      state.filters.city = "";
+      populateCityDropdown(e.target.value);
+      fetchVacancies(1);
+    });
+  }
+
+  // 3. Kabupaten / Kota filter
+  const citySelect = document.getElementById("filter-city");
+  if (citySelect) {
+    citySelect.addEventListener("change", (e) => {
+      state.filters.city = e.target.value;
+      fetchVacancies(1);
+    });
+  }
+
+  // 4. Prodi filter
+  const prodiSelect = document.getElementById("filter-prodi");
+  if (prodiSelect) {
+    prodiSelect.addEventListener("change", (e) => {
+      state.filters.studyProgram = e.target.value;
+      fetchVacancies(1);
+    });
+  }
+
+  // 5. Jenjang filter
+  const eduSelect = document.getElementById("filter-education");
+  if (eduSelect) {
+    eduSelect.addEventListener("change", (e) => {
+      state.filters.education = e.target.value;
+      fetchVacancies(1);
+    });
+  }
+
+  // 6. Tipe Instansi filter (Pemerintah / Perusahaan)
+  const typeSelect = document.getElementById("filter-company-type");
+  if (typeSelect) {
+    typeSelect.addEventListener("change", (e) => {
+      state.filters.companyType = e.target.value;
+      fetchVacancies(1);
+    });
+  }
+
+  // 7. Sorting filter
+  const sortSelect = document.getElementById("filter-sort");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", (e) => {
+      state.filters.sort = e.target.value;
+      renderVacancies();
+    });
+  }
+
+  // 8. Profile form
+  const profForm = document.getElementById("profile-form");
+  if (profForm) {
+    profForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      saveProfile();
+    });
+  }
+}
+
+window.resetAllFilters = function() {
+  state.filters.keyword = "";
+  state.filters.province = "";
+  state.filters.city = "";
+  state.filters.studyProgram = "";
+  state.filters.education = "";
+  state.filters.companyType = "";
+  state.filters.onlySaved = false;
+
+  const kwInput = document.getElementById("filter-keyword");
+  if (kwInput) kwInput.value = "";
+
+  const selects = ["filter-province", "filter-city", "filter-prodi", "filter-education", "filter-company-type"];
+  selects.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+
+  populateCityDropdown("");
+
+  // Reset preset chips
+  document.querySelectorAll(".quick-filter-chip").forEach((btn, idx) => {
+    if (idx === 0) {
+      btn.className = "quick-filter-chip px-3 py-1 rounded-md border border-slate-900 bg-slate-900 text-white font-medium hover:opacity-90 transition-all cursor-pointer shrink-0";
+    } else {
+      btn.className = "quick-filter-chip px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shrink-0";
+    }
+  });
+
+  const btnSaved = document.getElementById("btn-toggle-saved");
+  if (btnSaved) btnSaved.classList.remove("border-rose-400", "text-rose-600", "bg-rose-50");
+
+  fetchVacancies(1);
+};
+
+window.toggleQuickSaved = function() {
+  state.filters.onlySaved = !state.filters.onlySaved;
+  const btn = document.getElementById("btn-toggle-saved");
+  if (btn) {
+    if (state.filters.onlySaved) {
+      btn.classList.add("border-rose-400", "text-rose-600", "bg-rose-50");
+    } else {
+      btn.classList.remove("border-rose-400", "text-rose-600", "bg-rose-50");
+    }
+  }
+  renderVacancies();
+};
+
+function updateSavedPill() {
+  const pill = document.getElementById("saved-count-pill");
+  if (pill) {
+    pill.textContent = `Tersimpan (${state.bookmarks.length})`;
+  }
+}
+
+// =============================================================================
+// Bookmarks & Share
+// =============================================================================
+window.toggleBookmark = function(id) {
+  const idx = state.bookmarks.indexOf(id);
+  if (idx === -1) {
+    state.bookmarks.push(id);
+  } else {
+    state.bookmarks.splice(idx, 1);
+  }
+  localStorage.setItem(STORAGE_PREFIX + "bookmarks", JSON.stringify(state.bookmarks));
+  updateSavedPill();
+  renderVacancies();
+};
+
+window.shareVacancy = function(id) {
+  const v = state.vacancies.find((item) => item.id === id);
+  if (!v) return;
+
+  if (navigator.share) {
+    navigator.share({
+      title: `${v.title} — ${v.company}`,
+      text: `Lowongan Magang: ${v.title} (${v.company}) dengan kuota ${v.quota} posisi. Cek rinciannya di MagangTracker!`,
+      url: v.sourceUrl,
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(v.sourceUrl).then(() => {
+      alert("Tautan pendaftaran MagangHub telah disalin!");
+    });
+  }
+};
+
+// =============================================================================
+// Profile & CV Modal
+// =============================================================================
+window.openProfileModal = function() {
+  const modal = document.getElementById("profile-modal");
+  if (!modal) return;
+
+  const p = state.profile;
+  const nameEl = document.getElementById("profile-name");
+  if (nameEl) nameEl.value = p.name || "";
+  const prodiEl = document.getElementById("profile-prodi");
+  if (prodiEl) prodiEl.value = p.studyProgram || "";
+  const eduEl = document.getElementById("profile-education");
+  if (eduEl) eduEl.value = p.education || "";
+  const skillsEl = document.getElementById("profile-skills");
+  if (skillsEl) skillsEl.value = (p.skills || []).join(", ");
+  const cvEl = document.getElementById("profile-cv");
+  if (cvEl) cvEl.value = p.cvText || "";
+
+  modal.classList.add("open");
+};
+
+window.closeProfileModal = function() {
+  const modal = document.getElementById("profile-modal");
+  if (modal) modal.classList.remove("open");
+};
+
+function saveProfile() {
+  const name = (document.getElementById("profile-name")?.value || "").trim();
+  const studyProgram = (document.getElementById("profile-prodi")?.value || "").trim();
+  const education = document.getElementById("profile-education")?.value || "";
+  const skillsRaw = document.getElementById("profile-skills")?.value || "";
+  const cvText = (document.getElementById("profile-cv")?.value || "").trim();
+
+  const skills = skillsRaw.split(",").map((s) => s.trim()).filter(Boolean);
+
+  state.profile = { name, studyProgram, education, skills, cvText };
+  localStorage.setItem(STORAGE_PREFIX + "profile", JSON.stringify(state.profile));
+
+  state.vacancies = state.vacancies.map(enrichVacancyWithUserMatch);
+
+  updateProfileBadge();
+  closeProfileModal();
+  renderVacancies();
+}
+
+function updateProfileBadge() {
+  const badge = document.getElementById("nav-profile-badge");
+  if (!badge) return;
+  if (state.profile.studyProgram || (state.profile.skills && state.profile.skills.length)) {
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+// =============================================================================
+// Quick Preset Filters
+// =============================================================================
+window.applyQuickFilter = function(type) {
+  // Update chip styling
+  document.querySelectorAll(".quick-filter-chip").forEach((btn) => {
+    btn.className = "quick-filter-chip px-3 py-1 rounded-md border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shrink-0";
+  });
+
+  const eventTarget = window.event ? window.event.currentTarget : null;
+  if (eventTarget && eventTarget.classList.contains("quick-filter-chip")) {
+    eventTarget.className = "quick-filter-chip px-3 py-1 rounded-md border border-slate-900 bg-slate-900 text-white font-medium hover:opacity-90 transition-all cursor-pointer shrink-0";
+  }
+
+  if (type === "all") {
+    state.filters.companyType = "";
+    state.filters.education = "";
+    state.filters.sort = "least_applicants";
+    const elType = document.getElementById("filter-company-type");
+    if (elType) elType.value = "";
+    const elEdu = document.getElementById("filter-education");
+    if (elEdu) elEdu.value = "";
+    const elSort = document.getElementById("filter-sort");
+    if (elSort) elSort.value = "least_applicants";
+    fetchVacancies(1);
+    return;
+  }
+
+  if (type === "pemerintah") {
+    state.filters.companyType = "Pemerintah";
+    const el = document.getElementById("filter-company-type");
+    if (el) el.value = "Pemerintah";
+  } else if (type === "perusahaan") {
+    state.filters.companyType = "Perusahaan";
+    const el = document.getElementById("filter-company-type");
+    if (el) el.value = "Perusahaan";
+  } else if (type === "bachelor") {
+    state.filters.education = "bachelor";
+    const el = document.getElementById("filter-education");
+    if (el) el.value = "bachelor";
+  } else if (type === "diploma") {
+    state.filters.education = "diploma";
+    const el = document.getElementById("filter-education");
+    if (el) el.value = "diploma";
+  } else if (type === "least_applicants") {
+    state.filters.sort = "least_applicants";
+    const el = document.getElementById("filter-sort");
+    if (el) el.value = "least_applicants";
+    renderVacancies();
+    return;
+  }
+  fetchVacancies(1);
+};
+
+// =============================================================================
+// Detail Modal (Executive Dossier Redesign with Interview Pipeline & Transparency)
+// =============================================================================
+window.openDetailModal = function(id) {
+  const v = state.vacancies.find((item) => item.id === id);
+  if (!v) return;
+
+  const modal = document.getElementById("detail-modal");
+  const body = document.getElementById("detail-modal-body");
+  if (!modal || !body) return;
+
+  const umkFormatted = `Rp ${(v.estimatedUmk || 3972202).toLocaleString("id-ID")}`;
+  const compInitial = (v.company || "P").substring(0, 2).toUpperCase();
+
+  // Peluang calculation
+  let peluangPercent = 100;
+  if (v.quota && v.applicants !== undefined) {
+    if (v.applicants === 0) {
+      peluangPercent = 100;
+    } else {
+      peluangPercent = Math.min(100, Math.round((v.quota / Math.max(v.quota, v.applicants)) * 100));
+    }
+  }
+
+  const isPemerintah = v.companyType === "Pemerintah";
+  const instansiBadge = isPemerintah ? "Instansi Pemerintah RI" : "Perusahaan Mitra Magang";
+  const instansiBadgeClass = isPemerintah
+    ? "bg-blue-50 text-blue-700 border-blue-200"
+    : "bg-slate-100 text-slate-700 border-slate-200";
+
+  // Interview formats
+  const interviewTypes = v.interviewTypes || [];
+  const hasOnline = interviewTypes.includes("online");
+  const hasOnsite = interviewTypes.includes("onsite");
+  let interviewFormatText = "Seleksi Bertahap Sesuai Kebijakan Mitra";
+  if (hasOnline && hasOnsite) interviewFormatText = "Daring (Online) & Tatap Muka Langsung (Onsite)";
+  else if (hasOnline) interviewFormatText = "Wawancara Online (Google Meet / Zoom / Video Call)";
+  else if (hasOnsite) interviewFormatText = "Wawancara Tatap Muka di Kantor / Lokasi Penempatan";
+
+  // Education labels
+  const eduLabels = {
+    diploma: "Diploma (D3 / D4)",
+    bachelor: "Sarjana (S1)",
+    master: "Magister (S2)",
+    vocational: "SMK / SMA Sederajat",
+    profession: "Pendidikan Profesi",
+  };
+  const eduList = (v.educationLevels || ["diploma", "bachelor"]).map((l) => eduLabels[l] || l.toUpperCase()).join(", ");
+
+  // Published Date formatted
+  let publishedDateStr = "Baru ditayangkan";
+  if (v.publishedAt) {
+    try {
+      const d = new Date(v.publishedAt);
+      publishedDateStr = d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    } catch (_) {}
+  }
+
+  body.innerHTML = `
+    <!-- Header Identity -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div class="flex items-start gap-3.5 min-w-0">
+        <div style="width:58px;height:58px;min-width:58px;min-height:58px;" class="rounded-xl border border-slate-200 bg-white p-2 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+          ${v.logo ? `
+            <img src="${v.logo}" alt="${v.company}" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'font-extrabold text-slate-700 text-base\\'>${compInitial}</span>';"/>
+          ` : `
+            <span class="font-extrabold text-slate-700 text-base">${compInitial}</span>
+          `}
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">${v.company}</span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${instansiBadgeClass}">
+              <span class="material-symbols-outlined text-[13px] text-blue-600">${isPemerintah ? 'account_balance' : 'domain'}</span>
+              <span>${instansiBadge}</span>
+            </span>
+          </div>
+          <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug tracking-tight">${v.title}</h2>
+          <p class="text-xs text-slate-500 flex items-center gap-2 mt-1.5 flex-wrap">
+            <span class="inline-flex items-center gap-1 text-slate-600 font-medium">
+              <span class="material-symbols-outlined text-[15px] text-blue-600">location_on</span>
+              <span>${v.location || v.city || "Indonesia"}</span>
+            </span>
+            <span class="text-slate-300">&bull;</span>
+            <span class="text-slate-400">Ditayangkan: ${publishedDateStr}</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+        <button onclick="shareVacancy('${v.id}')" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors cursor-pointer" title="Bagikan">
+          <span class="material-symbols-outlined text-[18px]">share</span>
+        </button>
+        <button onclick="toggleBookmark('${v.id}')" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg border border-slate-200 transition-colors cursor-pointer" title="Simpan">
+          <span class="material-symbols-outlined text-[18px] ${state.bookmarks.includes(v.id) ? 'text-blue-600 fill' : ''}">favorite</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Black, White & Blue 4-Grid Metrics Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <!-- Kuota -->
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs">
+        <div class="flex items-center justify-between text-slate-500 mb-1.5">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Kuota Posisi</span>
+          <span class="material-symbols-outlined text-[17px] text-blue-600">group</span>
+        </div>
+        <div>
+          <div class="text-lg sm:text-xl font-extrabold text-slate-900 leading-none">${v.quota} <span class="text-xs font-semibold text-slate-500">Orang</span></div>
+          <span class="text-[11px] text-slate-500 mt-1 block">Dibutuhkan mitra</span>
+        </div>
+      </div>
+
+      <!-- Pelamar -->
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs">
+        <div class="flex items-center justify-between text-slate-500 mb-1.5">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Total Pelamar</span>
+          <span class="material-symbols-outlined text-[17px] text-slate-400">how_to_reg</span>
+        </div>
+        <div>
+          <div class="text-lg sm:text-xl font-extrabold text-slate-900 leading-none">${v.applicants} <span class="text-xs font-semibold text-slate-500">Berkas</span></div>
+          <span class="text-[11px] text-slate-500 mt-1 block">Terdaftar di sistem</span>
+        </div>
+      </div>
+
+      <!-- Peluang Lolos -->
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs">
+        <div class="flex items-center justify-between text-slate-500 mb-1.5">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Peluang Lolos</span>
+          <span class="material-symbols-outlined text-[17px] text-blue-600">trending_up</span>
+        </div>
+        <div>
+          <div class="text-lg sm:text-xl font-extrabold text-blue-600 leading-none">${peluangPercent}%</div>
+          <span class="text-[11px] text-slate-500 font-medium mt-1 block">${peluangPercent >= 50 ? 'Peluang Besar' : 'Persaingan Ketat'}</span>
+        </div>
+      </div>
+
+      <!-- Uang Saku / UMK -->
+      <div class="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs">
+        <div class="flex items-center justify-between text-slate-500 mb-1.5">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Est. Uang Saku</span>
+          <span class="material-symbols-outlined text-[17px] text-slate-400">payments</span>
+        </div>
+        <div>
+          <div class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight truncate" title="${umkFormatted}">${umkFormatted}</div>
+          <span class="text-[11px] text-slate-500 font-medium mt-1 block">Standar UMK / bln</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CV Matcher Score Bar (if profile exists) -->
+    ${v.matchBreakdown && v.matchBreakdown.length > 0 ? `
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs">
+        <div class="font-medium text-slate-800 mb-2 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-blue-600">verified</span>
+            <span class="font-semibold text-slate-900">Kecocokan Profil CV: ${v.matchScore}%</span>
+          </span>
+          <span class="text-[11px] text-slate-400">Privat di Perangkat</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-1.5 mb-2.5 overflow-hidden">
+          <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${v.matchScore}%"></div>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          ${v.matchBreakdown.map((b) => `<span class="bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-[11px] font-medium">${b}</span>`).join("")}
+        </div>
+      </div>
+    ` : ''}
+
+    <!-- Clean Monochrome & Blue 2x2 Grid (Metode, Jadwal, Disabilitas, Lokasi) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      
+      <!-- Card 1: Metode Interview -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:border-slate-300 transition-all flex gap-3.5 items-start shadow-2xs">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+          <span class="material-symbols-outlined text-[20px]">videocam</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Metode Interview</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              ${hasOnline && hasOnsite ? 'Hybrid' : (hasOnline ? 'Online / Remote' : (hasOnsite ? 'Tatap Muka' : 'Mitra Selection'))}
+            </span>
+          </div>
+          <p class="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug">
+            ${interviewFormatText}
+          </p>
+          <p class="text-[11px] text-slate-400 mt-1 leading-normal flex items-center gap-1">
+            <span class="material-symbols-outlined text-[13px] text-slate-400">info</span>
+            <span>Jadwal interview ditentukan langsung oleh mitra bila lolos berkas.</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 2: Jadwal & Hari Kerja -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:border-slate-300 transition-all flex gap-3.5 items-start shadow-2xs">
+        <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 border border-slate-200">
+          <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Jadwal &amp; Hari Kerja</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+              ${v.workingDaysPerWeek ? `${v.workingDaysPerWeek} Hari / Minggu` : '5 Hari Kerja'}
+            </span>
+          </div>
+          <p class="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug">
+            ${v.workingDaysPerWeek ? `${v.workingDaysPerWeek} Hari Kerja per Minggu` : '5 Hari Kerja per Minggu (Senin - Jumat)'}
+          </p>
+          <p class="text-[11px] text-slate-500 mt-1 leading-normal">
+            <span class="font-medium text-slate-700">Hari Libur:</span> ${(() => {
+              const dayMap = { sunday: "Minggu", monday: "Senin", tuesday: "Selasa", wednesday: "Rabu", thursday: "Kamis", friday: "Jumat", saturday: "Sabtu" };
+              if (v.daysOff && v.daysOff.length) return v.daysOff.map(d => dayMap[d.toLowerCase()] || d).join(" & ");
+              return v.workingDaysPerWeek === 6 ? "Minggu" : "Sabtu & Minggu";
+            })()}
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 3: Aksesibilitas Disabilitas -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:border-slate-300 transition-all flex gap-3.5 items-start shadow-2xs">
+        <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[20px]">accessible_forward</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aksesibilitas</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+              ${v.isDisabilityFriendly ? 'Ramah Disabilitas' : 'Umum'}
+            </span>
+          </div>
+          <p class="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug">
+            ${v.isDisabilityFriendly ? 'Tersedia Fasilitas Khusus Disabilitas' : 'Terbuka untuk Semua Kalangan Mahasiswa'}
+          </p>
+          <p class="text-[11px] text-slate-400 mt-1 leading-normal">
+            ${v.isDisabilityFriendly ? 'Mitra menyediakan akomodasi yang sesuai untuk penyandang disabilitas.' : 'Tidak memerlukan fasilitas mobilitas khusus.'}
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 4: Lokasi Penempatan -->
+      <div class="border border-slate-200 rounded-xl p-4 bg-white hover:border-slate-300 transition-all flex gap-3.5 items-start shadow-2xs">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+          <span class="material-symbols-outlined text-[20px]">pin_drop</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lokasi Penempatan</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200 truncate max-w-[150px]">
+              ${v.city || 'Indonesia'}
+            </span>
+          </div>
+          <p class="text-xs sm:text-[13px] font-semibold text-slate-900 leading-relaxed break-words">
+            ${v.fullAddress || v.location || "Alamat resmi kantor penempatan sesuai data MagangHub."}
+          </p>
+          ${(v.companyEmail || v.companyPhone) ? `
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500 text-[11px] mt-2 pt-2 border-t border-slate-100">
+              ${v.companyEmail ? `<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-slate-400">mail</span><span class="font-medium text-slate-700">${v.companyEmail}</span></span>` : ''}
+              ${v.companyPhone ? `<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-slate-400">call</span><span class="font-medium text-slate-700">${v.companyPhone}</span></span>` : ''}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Jenjang Pendidikan & Kualifikasi Jurusan -->
+    <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3.5 shadow-2xs">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+          <span class="material-symbols-outlined text-blue-600 text-[18px]">school</span>
+          <span>Jenjang Pendidikan yang Diterima</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${(v.educationLevels && v.educationLevels.length ? v.educationLevels : ["diploma", "bachelor"]).map((lvl) => `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+              <span class="material-symbols-outlined text-[14px] text-blue-600">check_circle</span>
+              <span>${eduLabels[lvl] || lvl.toUpperCase()}</span>
+            </span>
+          `).join("")}
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100">
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span class="material-symbols-outlined text-blue-600 text-[18px]">category</span>
+            <span>Program Studi yang Memenuhi Syarat</span>
+          </div>
+          <span class="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+            ${v.studyPrograms ? v.studyPrograms.length : 0} Jurusan
+          </span>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          ${v.studyPrograms && v.studyPrograms.length ? v.studyPrograms.map((p) => `
+            <span class="bg-white border border-slate-200 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-lg hover:bg-slate-50 transition-colors">${p}</span>
+          `).join("") : `<span class="bg-white border border-slate-200 text-slate-500 text-xs px-3 py-1 rounded-lg">Semua Jurusan Terbuka</span>`}
+        </div>
+      </div>
+    </div>
+
+    <!-- Deskripsi Tugas & Tanggung Jawab -->
+    <div class="border border-slate-200 rounded-xl p-4 bg-white mb-2 shadow-2xs">
+      <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+        <span class="material-symbols-outlined text-slate-600 text-[18px]">description</span>
+        <span>Rincian Tugas &amp; Tanggung Jawab</span>
+      </div>
+      <div class="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50/70 border border-slate-200/80 rounded-xl p-4">
+        ${(!v.description || v.description.startsWith("$") || v.description.trim().length <= 3)
+          ? "Instansi belum mencantumkan rincian tugas spesifik pada portal MagangHub. Keterangan teknis dan lingkup pekerjaan lengkap dapat dikonfirmasi saat proses seleksi wawancara atau dilihat pada tautan resmi Kemnaker."
+          : v.description}
+      </div>
+    </div>
+  `;
+
+  // Update fixed footer apply link
+  const applyBtn = document.getElementById("detail-modal-apply-btn");
+  if (applyBtn) {
+    applyBtn.href = v.sourceUrl || "https://maganghub.kemnaker.go.id";
+  }
+
+  modal.classList.add("open");
+};
+
+window.closeDetailModal = function() {
+  const modal = document.getElementById("detail-modal");
+  if (modal) modal.classList.remove("open");
+};

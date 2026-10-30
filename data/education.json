@@ -1,0 +1,6 @@
+[
+  { "id": "diploma", "name": "Diploma (D3 / D4)", "aliases": ["diploma", "d3", "d4", "vokasi"] },
+  { "id": "bachelor", "name": "Sarjana (S1)", "aliases": ["sarjana", "s1", "bachelor", "strata 1"] },
+  { "id": "master", "name": "Magister (S2)", "aliases": ["magister", "s2", "master"] },
+  { "id": "profession", "name": "Profesi", "aliases": ["profesi", "dokter", "ners", "apoteker", "akuntan"] }
+]
