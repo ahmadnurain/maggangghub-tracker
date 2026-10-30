@@ -1,6 +1,7 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "regions": ["sin1"],
   "rewrites": [
     {
       "source": "/api/vacancies",
@@ -28,3 +29,4 @@
     }
   ]
 }
+

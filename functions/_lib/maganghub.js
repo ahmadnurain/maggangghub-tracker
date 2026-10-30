@@ -68,7 +68,11 @@ export async function fetchMagangHubVacancies({ keyword = "", page = 1, sort = "
   } catch (err) {
     // Strategy 2: Fallback to active mirror / pantauloker API
     console.warn("Primary MagangHub fetch failed, using fallback source:", err.message);
-    return await fetchFallbackVacancies({ keyword, page });
+    const fallback = await fetchFallbackVacancies({ keyword, page });
+    if (!fallback.success) {
+      fallback.primaryError = err.message;
+    }
+    return fallback;
   }
 }
 

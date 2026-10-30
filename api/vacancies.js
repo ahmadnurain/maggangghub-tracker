@@ -48,6 +48,7 @@ export default async function handler(req, res) {
         success: false,
         error: result.error,
         message: result.message,
+        primaryError: result.primaryError,
         items: []
       });
     }
@@ -91,3 +92,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: err.message });
   }
 }
+
