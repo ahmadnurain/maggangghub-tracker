@@ -132,8 +132,15 @@ export async function fetchVacancyDetail(id, timeout = 10000) {
 
     const res = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
         "Accept": "text/html",
+        "sec-ch-ua": '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "none",
+        "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
       },
       signal: controller.signal,
     });
@@ -142,33 +149,40 @@ export async function fetchVacancyDetail(id, timeout = 10000) {
     if (!res.ok) return null;
     const html = await res.text();
 
-    // Look for vacancy object in RSC self.__next_f pushes
-    const marker = '"vacancy":{';
-    const idx = html.indexOf(marker);
+    // Look for vacancy object in RSC self.__next_f pushes (escaped or unescaped)
+    let marker = '\\"vacancy\\":{';
+    let idx = html.indexOf(marker);
+    let isEscaped = true;
+
+    if (idx === -1) {
+      marker = '"vacancy":{';
+      idx = html.indexOf(marker);
+      isEscaped = false;
+    }
+
     if (idx === -1) return null;
 
-    const start = idx + '"vacancy":'.length;
+    const start = idx + marker.length - 1;
     let depth = 0;
-    let inQuote = false;
-    let escape = false;
     let end = start;
+    let inEscape = false;
 
     for (let i = start; i < html.length; i++) {
       const c = html[i];
-      if (escape) { escape = false; continue; }
-      if (c === "\\") { escape = true; continue; }
-      if (c === '"') { inQuote = !inQuote; continue; }
-      if (!inQuote) {
-        if (c === "{") depth++;
-        else if (c === "}") {
-          depth--;
-          if (depth === 0) { end = i + 1; break; }
-        }
+      if (inEscape) { inEscape = false; continue; }
+      if (c === "\\") { inEscape = true; continue; }
+      if (c === "{") depth++;
+      else if (c === "}") {
+        depth--;
+        if (depth === 0) { end = i + 1; break; }
       }
     }
 
-    const unescaped = html.slice(start, end).replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\//g, "/");
-    return JSON.parse(unescaped);
+    let raw = html.slice(start, end);
+    if (isEscaped) {
+      raw = raw.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    }
+    return JSON.parse(raw);
   } catch (_) {
     return null;
   }
