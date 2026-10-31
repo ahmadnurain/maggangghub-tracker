@@ -33,6 +33,7 @@ const state = {
   },
 
   bookmarks: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "bookmarks")) || [],
+  savedVacanciesMap: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "saved_items")) || {},
   regionsData: [],
 };
 
@@ -44,6 +45,7 @@ let searchDebounceTimer = null;
 document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   loadRegionsAndFilters();
+  syncSavedVacancies();
   fetchVacancies(1);
   updateProfileBadge();
   updateSavedPill();
@@ -193,6 +195,15 @@ async function fetchVacancies(page = 1, append = false) {
       state.totalVacancies = json.meta?.total || state.vacancies.length;
 
       appendDynamicStudyPrograms(json.items);
+
+      // Sinkronisasi item tersimpan jika ada lowongan saat ini yang sudah di-bookmark
+      enriched.forEach((v) => {
+        if (state.bookmarks.includes(v.id)) {
+          state.savedVacanciesMap[v.id] = v;
+        }
+      });
+      localStorage.setItem(STORAGE_PREFIX + "saved_items", JSON.stringify(state.savedVacanciesMap));
+
       renderVacancies();
       updatePaginationUI();
     } else {
@@ -218,6 +229,11 @@ async function fetchVacancies(page = 1, append = false) {
 }
 
 function updatePaginationUI() {
+  const paginationControls = document.getElementById("pagination-controls");
+  if (paginationControls) {
+    paginationControls.style.display = state.filters.onlySaved ? "none" : "flex";
+  }
+
   const currentEl = document.getElementById("current-page-num");
   const totalPagesEl = document.getElementById("total-pages-num");
   const totalVacanciesEl = document.getElementById("total-vacancies-num");
@@ -343,11 +359,20 @@ function renderVacancies() {
   const container = document.getElementById("cards-container");
   if (!container) return;
 
-  let items = [...state.vacancies];
+  let items = [];
 
-  // Only saved filter
+  // When "Tersimpan" filter is active, fetch from savedVacanciesMap directly
   if (state.filters.onlySaved) {
-    items = items.filter((v) => state.bookmarks.includes(v.id));
+    items = state.bookmarks
+      .map((id) => state.savedVacanciesMap[id] || state.vacancies.find((v) => v.id === id))
+      .filter(Boolean);
+
+    // If some bookmarked items are not yet loaded into map, sync in background
+    if (items.length < state.bookmarks.length) {
+      syncSavedVacancies();
+    }
+  } else {
+    items = [...state.vacancies];
   }
 
   // Sorting
@@ -371,12 +396,24 @@ function renderVacancies() {
   // Update count
   const countEl = document.getElementById("results-count");
   if (countEl) {
-    const totalFormatted = state.totalVacancies ? state.totalVacancies.toLocaleString("id-ID") : items.length.toLocaleString("id-ID");
-    countEl.innerHTML = `${items.length.toLocaleString("id-ID")} <span class="text-slate-400 font-normal">dari total ${totalFormatted}</span>`;
+    if (state.filters.onlySaved) {
+      countEl.innerHTML = `${items.length.toLocaleString("id-ID")} <span class="text-slate-400 font-normal">lowongan tersimpan</span>`;
+    } else {
+      const totalFormatted = state.totalVacancies ? state.totalVacancies.toLocaleString("id-ID") : items.length.toLocaleString("id-ID");
+      countEl.innerHTML = `${items.length.toLocaleString("id-ID")} <span class="text-slate-400 font-normal">dari total ${totalFormatted}</span>`;
+    }
   }
 
   if (items.length === 0) {
-    renderEmpty("Tidak ditemukan lowongan yang cocok dengan kriteria filter Anda.");
+    if (state.filters.onlySaved) {
+      if (state.bookmarks.length > 0) {
+        renderEmpty("Sedang memuat data lowongan tersimpan Anda dari pangkalan data Kemnaker...");
+      } else {
+        renderEmpty("Belum ada lowongan yang Anda simpan. Klik ikon hati (Love) pada kartu lowongan untuk menyimpannya di sini.");
+      }
+    } else {
+      renderEmpty("Tidak ditemukan lowongan yang cocok dengan kriteria filter Anda.");
+    }
     return;
   }
 
@@ -816,8 +853,51 @@ window.toggleQuickSaved = function() {
       btn.classList.remove("border-rose-400", "text-rose-600", "bg-rose-50");
     }
   }
+  if (state.filters.onlySaved) {
+    syncSavedVacancies();
+  }
   renderVacancies();
+  updatePaginationUI();
 };
+
+async function syncSavedVacancies() {
+  if (!state.bookmarks || state.bookmarks.length === 0) return;
+
+  const missingIds = state.bookmarks.filter((id) => !state.savedVacanciesMap[id]);
+  if (missingIds.length === 0) return;
+
+  const needFetch = [];
+  missingIds.forEach((id) => {
+    const found = state.vacancies.find((v) => v.id === id);
+    if (found) {
+      state.savedVacanciesMap[id] = found;
+    } else {
+      needFetch.push(id);
+    }
+  });
+
+  if (needFetch.length > 0) {
+    await Promise.allSettled(
+      needFetch.map(async (id) => {
+        try {
+          const res = await fetch(`/api/vacancy/${id}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              state.savedVacanciesMap[id] = enrichVacancyWithUserMatch(json.data);
+            }
+          }
+        } catch (_) {}
+      })
+    );
+  }
+
+  localStorage.setItem(STORAGE_PREFIX + "saved_items", JSON.stringify(state.savedVacanciesMap));
+  updateSavedPill();
+  if (state.filters.onlySaved) {
+    renderVacancies();
+  }
+}
 
 function updateSavedPill() {
   const pill = document.getElementById("saved-count-pill");
@@ -833,10 +913,17 @@ window.toggleBookmark = function(id) {
   const idx = state.bookmarks.indexOf(id);
   if (idx === -1) {
     state.bookmarks.push(id);
+    const item = state.vacancies.find((v) => v.id === id) || state.savedVacanciesMap[id];
+    if (item) {
+      state.savedVacanciesMap[id] = item;
+    }
   } else {
     state.bookmarks.splice(idx, 1);
+    delete state.savedVacanciesMap[id];
   }
+
   localStorage.setItem(STORAGE_PREFIX + "bookmarks", JSON.stringify(state.bookmarks));
+  localStorage.setItem(STORAGE_PREFIX + "saved_items", JSON.stringify(state.savedVacanciesMap));
   updateSavedPill();
   renderVacancies();
 };
