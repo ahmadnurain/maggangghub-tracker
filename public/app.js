@@ -187,11 +187,11 @@ async function fetchVacancies(page = 1, append = false, forceNormal = false) {
     `;
   }
 
-  // Only show skeleton if there is NO data on the screen
-  // If data already exists, keep it visible while loading to avoid jumpy UI!
-  if (!append && (!state.vacancies || state.vacancies.length === 0)) {
+  // Show skeleton whenever changing page or applying a new search (!append)
+  if (!append) {
     renderSkeleton();
   }
+  updatePaginationUI();
   renderActiveFilterTags();
 
   const params = new URLSearchParams({
@@ -291,10 +291,19 @@ function updatePaginationUI() {
   if (currentEl) currentEl.textContent = cur;
   if (totalPagesEl) totalPagesEl.textContent = totPages.toLocaleString("id-ID");
   if (totalVacanciesEl) totalVacanciesEl.textContent = totVac;
-  if (indicatorEl) indicatorEl.textContent = cur;
 
-  if (btnPrev) btnPrev.disabled = cur <= 1;
-  if (btnNext) btnNext.disabled = cur >= totPages;
+  if (state.isLoading) {
+    if (indicatorEl) {
+      indicatorEl.innerHTML = `<span class="inline-flex items-center gap-1 text-blue-600 font-bold"><span class="material-symbols-outlined text-[13px] animate-spin">sync</span><span>${cur}</span></span>`;
+    }
+    if (btnPrev) btnPrev.disabled = true;
+    if (btnNext) btnNext.disabled = true;
+  } else {
+    if (indicatorEl) indicatorEl.textContent = cur;
+    if (btnPrev) btnPrev.disabled = cur <= 1;
+    if (btnNext) btnNext.disabled = cur >= totPages;
+  }
+
   if (btnLoadMore) {
     btnLoadMore.style.display = cur >= totPages ? "none" : "inline-flex";
   }
@@ -780,8 +789,18 @@ function renderSkeleton() {
   const container = document.getElementById("cards-container");
   if (!container) return;
 
-  container.innerHTML = Array.from({ length: 4 }).map(() => `
-    <div class="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-3.5">
+  const headerNotice = `
+    <div class="col-span-full py-2.5 px-3.5 bg-blue-50/90 border border-blue-200/90 rounded-xl flex items-center justify-between text-xs text-blue-800 shadow-2xs animate-pulse">
+      <span class="flex items-center gap-2 font-medium">
+        <span class="material-symbols-outlined text-[17px] animate-spin text-blue-600">sync</span>
+        <span>Mengambil lowongan dari pangkalan data Kemnaker...</span>
+      </span>
+      <span class="text-[11px] font-semibold text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-md">Halaman ${state.currentPage || 1}</span>
+    </div>
+  `;
+
+  const cards = Array.from({ length: 6 }).map(() => `
+    <div class="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-3.5 animate-pulse">
       <div class="flex items-start gap-3.5">
         <div class="w-11 h-11 rounded-lg shimmer shrink-0"></div>
         <div class="flex-1 flex flex-col gap-1.5 pt-0.5">
@@ -800,6 +819,8 @@ function renderSkeleton() {
       </div>
     </div>
   `).join("");
+
+  container.innerHTML = headerNotice + cards;
 }
 
 // =============================================================================
