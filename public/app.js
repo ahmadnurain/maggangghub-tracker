@@ -46,6 +46,8 @@ const state = {
 };
 
 let searchDebounceTimer = null;
+let currentSearchRequestId = 0;
+let currentSearchAbortController = null;
 
 // =============================================================================
 // Initialization
@@ -156,9 +158,21 @@ function populateProdiDropdown(prodis = []) {
 }
 
 // =============================================================================
-// Live Backend Fetching (Pagination & Load More Support)
+// Live Backend Fetching (Pagination & Load More Support with Race Guard)
 // =============================================================================
-async function fetchVacancies(page = 1, append = false) {
+async function fetchVacancies(page = 1, append = false, forceNormal = false) {
+  // If user is currently viewing Radar results, do not let background calls overwrite it!
+  if (state.radar && state.radar.isRadarActive && !forceNormal) {
+    return;
+  }
+
+  // Abort any prior in-flight request
+  if (currentSearchAbortController) {
+    currentSearchAbortController.abort();
+  }
+  currentSearchAbortController = new AbortController();
+  const requestId = ++currentSearchRequestId;
+
   state.isLoading = true;
   state.currentPage = page;
 
@@ -171,7 +185,9 @@ async function fetchVacancies(page = 1, append = false) {
     `;
   }
 
-  if (!append) {
+  // Only show skeleton if there is NO data on the screen
+  // If data already exists, keep it visible while loading to avoid jumpy UI!
+  if (!append && (!state.vacancies || state.vacancies.length === 0)) {
     renderSkeleton();
   }
   renderActiveFilterTags();
@@ -189,8 +205,15 @@ async function fetchVacancies(page = 1, append = false) {
   if (state.filters.companyType) params.set("companyType", state.filters.companyType);
 
   try {
-    const res = await fetch(`/api/vacancies?${params.toString()}`);
+    const res = await fetch(`/api/vacancies?${params.toString()}`, {
+      signal: currentSearchAbortController.signal,
+    });
     const json = await res.json();
+
+    // Guard: Discard stale response if a newer request was already dispatched
+    if (requestId !== currentSearchRequestId) {
+      return;
+    }
 
     if (json.success && Array.isArray(json.items)) {
       const enriched = json.items.map(enrichVacancyWithUserMatch);
@@ -217,24 +240,31 @@ async function fetchVacancies(page = 1, append = false) {
       renderVacancies();
       updatePaginationUI();
     } else {
-      if (!append) {
+      // Do not wipe out already displayed data on temporary server glitch
+      if (!append && (!state.vacancies || state.vacancies.length === 0)) {
         renderEmpty(json.message || "Gagal memuat lowongan dari pangkalan data Kemnaker.");
       }
     }
   } catch (err) {
-    if (!append) {
-      renderEmpty("Kendala koneksi ke server.");
+    if (err.name === "AbortError" || requestId !== currentSearchRequestId) {
+      return;
+    }
+    // Only show empty state if screen was already empty
+    if (!append && (!state.vacancies || state.vacancies.length === 0)) {
+      renderEmpty("Kendala koneksi ke server. Coba muat ulang.");
     }
   } finally {
-    state.isLoading = false;
-    if (btnLoadMore) {
-      btnLoadMore.disabled = false;
-      btnLoadMore.innerHTML = `
-        <span class="material-symbols-outlined text-[16px]">add_circle</span>
-        <span>Muat 18 Lowongan Lagi</span>
-      `;
+    if (requestId === currentSearchRequestId) {
+      state.isLoading = false;
+      if (btnLoadMore) {
+        btnLoadMore.disabled = false;
+        btnLoadMore.innerHTML = `
+          <span class="material-symbols-outlined text-[16px]">add_circle</span>
+          <span>Muat 18 Lowongan Lagi</span>
+        `;
+      }
+      updatePaginationUI();
     }
-    updatePaginationUI();
   }
 }
 
@@ -1703,10 +1733,18 @@ function updateRadarProgress(label, percent) {
 window.executeRadarSearch = async function () {
   if (state.radar.isScanning) return;
 
+  // Abort any pending standard search or debounce timer
+  clearTimeout(searchDebounceTimer);
+  if (currentSearchAbortController) {
+    currentSearchAbortController.abort();
+  }
+  const radarRequestId = ++currentSearchRequestId;
+
   const keywords = state.radar.activeKeywords.length > 0 ? state.radar.activeKeywords : ["developer", "it", "programmer"];
   const cities = state.radar.activeCities;
 
   state.radar.isScanning = true;
+  state.radar.isRadarActive = true;
   const progressContainer = document.getElementById("radar-progress-bar-container");
   const btnExecute = document.getElementById("btn-execute-radar");
   if (progressContainer) progressContainer.classList.remove("hidden");
@@ -1715,12 +1753,20 @@ window.executeRadarSearch = async function () {
     btnExecute.innerHTML = `<span class="material-symbols-outlined animate-spin text-[16px]">sync</span><span>Memindai...</span>`;
   }
 
-  renderSkeleton();
+  // Only render skeleton if there's no data currently
+  if (!state.vacancies || state.vacancies.length === 0) {
+    renderSkeleton();
+  }
 
   let rawAllItems = [];
   const total = keywords.length;
 
   for (let i = 0; i < keywords.length; i++) {
+    // If user cancelled or another search started, abort loop immediately
+    if (radarRequestId !== currentSearchRequestId) {
+      return;
+    }
+
     const kw = keywords[i];
     updateRadarProgress(`Memindai kata kunci '${kw}' (${i + 1}/${total})...`, Math.round(((i + 0.3) / total) * 100));
     try {
@@ -1733,6 +1779,11 @@ window.executeRadarSearch = async function () {
       }
     } catch (_) {}
     updateRadarProgress(`Selesai memindai '${kw}' (${i + 1}/${total})`, Math.round(((i + 1) / total) * 100));
+  }
+
+  // Guard against stale search
+  if (radarRequestId !== currentSearchRequestId) {
+    return;
   }
 
   // Deduplicate by ID
@@ -1752,7 +1803,6 @@ window.executeRadarSearch = async function () {
 
   // Enrich with user match
   state.vacancies = uniqueItems.map(enrichVacancyWithUserMatch);
-  state.radar.isRadarActive = true;
   state.totalVacancies = state.vacancies.length;
   state.currentPage = 1;
   state.totalPages = 1;
@@ -1783,5 +1833,5 @@ window.exitRadarMode = function () {
   state.radar.isRadarActive = false;
   const banner = document.getElementById("active-radar-banner");
   if (banner) banner.classList.add("hidden");
-  fetchVacancies(1);
+  fetchVacancies(1, false, true);
 };
