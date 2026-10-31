@@ -386,12 +386,31 @@
           <span>Kualifikasi &amp; Pengurutan</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-          <!-- 3. Program Studi -->
-          <div class="relative">
-            <select id="filter-prodi" class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs sm:text-sm text-slate-800 font-medium focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 appearance-none cursor-pointer transition-colors">
-              <option value="">Semua Program Studi</option>
-            </select>
-            <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2.5 pointer-events-none text-[18px]">expand_more</span>
+          <!-- 3. Program Studi (Searchable / Typeable Combobox) -->
+          <div class="relative" id="prodi-filter-container">
+            <div class="relative flex items-center">
+              <span class="material-symbols-outlined text-slate-400 absolute left-2.5 pointer-events-none text-[18px]">school</span>
+              <input 
+                type="text" 
+                id="filter-prodi" 
+                placeholder="Ketik Prodi (Informatika, dll)..." 
+                autocomplete="off"
+                class="w-full bg-slate-50/70 border border-slate-200 hover:border-slate-300 rounded-lg py-2 pl-8 pr-7 text-xs sm:text-sm text-slate-800 font-medium placeholder:text-slate-400 focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-colors"
+              />
+              <button 
+                type="button" 
+                id="filter-prodi-clear" 
+                title="Hapus filter prodi" 
+                class="hidden absolute right-2 text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer transition-colors"
+              >
+                <span class="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+            <!-- Dynamic Autocomplete Dropdown List -->
+            <div 
+              id="prodi-suggestions-dropdown" 
+              class="hidden absolute left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 text-xs sm:text-sm divide-y divide-slate-50"
+            ></div>
           </div>
 
           <!-- 4. Jenjang Pendidikan -->
@@ -598,6 +617,6 @@
     </div>
   </div>
 
-  <script src="/app.js"></script>
+  <script src="/app.js?v=20261031-2"></script>
 </body>
 </html>

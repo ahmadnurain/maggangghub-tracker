@@ -35,6 +35,48 @@ const state = {
   bookmarks: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "bookmarks")) || [],
   savedVacanciesMap: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "saved_items")) || {},
   regionsData: [],
+  availableProdis: [
+    "Teknik Informatika",
+    "Sistem Informasi",
+    "Teknologi Informasi",
+    "Ilmu Komputer",
+    "Rekayasa Perangkat Lunak",
+    "Manajemen Informatika",
+    "Teknik Komputer",
+    "Sistem Komputer",
+    "Administrasi",
+    "Administrasi Bisnis",
+    "Administrasi Perkantoran",
+    "Administrasi Publik",
+    "Akuntansi",
+    "Desain Komunikasi Visual",
+    "Desain Grafis",
+    "Farmasi",
+    "Hubungan Internasional",
+    "Hukum",
+    "Ilmu Komunikasi",
+    "Keperawatan",
+    "Kesehatan Masyarakat",
+    "Manajemen",
+    "Manajemen Bisnis",
+    "Manajemen Pemasaran",
+    "Manajemen Keuangan",
+    "Pariwisata / Perhotelan",
+    "Pendidikan",
+    "Pendidikan Guru",
+    "Psikologi",
+    "Sastra Inggris",
+    "Sastra Indonesia",
+    "Statistika",
+    "Tata Boga",
+    "Tata Busana",
+    "Teknik Elektro",
+    "Teknik Industri",
+    "Teknik Kimia",
+    "Teknik Lingkungan",
+    "Teknik Mesin",
+    "Teknik Sipil"
+  ],
 
   radar: {
     isOpen: false,
@@ -123,39 +165,102 @@ function populateCityDropdown(selectedProvinceName = "") {
 }
 
 function populateProdiDropdown(prodis = []) {
-  const select = document.getElementById("filter-prodi");
-  if (!select) return;
+  const incoming = (prodis || []).map((p) => (typeof p === "string" ? p : p.name || p.nama || "")).filter(Boolean);
+  state.availableProdis = Array.from(new Set([...state.availableProdis, ...incoming])).sort((a, b) => a.localeCompare(b));
+}
 
-  select.innerHTML = `<option value="">Semua Program Studi</option>`;
-  const defaultMajors = [
-    "Administrasi",
-    "Administrasi Bisnis",
-    "Akuntansi",
-    "Desain Komunikasi Visual",
-    "Hukum",
-    "Ilmu Komputer",
-    "Ilmu Komunikasi",
-    "Manajemen",
-    "Pariwisata / Perhotelan",
-    "Psikologi",
-    "Sistem Informasi",
-    "Tata Busana",
-    "Teknik Elektro",
-    "Teknik Industri",
-    "Teknik Informatika",
-    "Teknik Mesin",
-    "Teknologi Informasi"
-  ];
+function renderProdiSuggestions(query = "") {
+  const dropdown = document.getElementById("prodi-suggestions-dropdown");
+  if (!dropdown) return;
 
-  const incoming = (prodis || []).map((p) => p.name);
-  const list = Array.from(new Set([...defaultMajors, ...incoming])).sort();
+  const q = (query || "").trim().toLowerCase();
+  let matches = [];
 
-  list.forEach((name) => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    select.appendChild(opt);
+  if (!q) {
+    matches = state.availableProdis.slice(0, 16);
+  } else {
+    const exact = [];
+    const starts = [];
+    const contains = [];
+    state.availableProdis.forEach((p) => {
+      const pl = p.toLowerCase();
+      if (pl === q) exact.push(p);
+      else if (pl.startsWith(q)) starts.push(p);
+      else if (pl.includes(q)) contains.push(p);
+    });
+    matches = [...exact, ...starts, ...contains].slice(0, 20);
+  }
+
+  let html = "";
+
+  // Reset / Semua option
+  html += `
+    <div class="px-3 py-2 text-slate-600 hover:bg-slate-100 cursor-pointer flex items-center justify-between font-medium transition-colors" data-prodi-val="">
+      <span class="flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px] text-slate-400">restart_alt</span>
+        <span>Semua Program Studi (Reset)</span>
+      </span>
+      <span class="text-[11px] text-slate-400 font-normal">Tampilkan Semua</span>
+    </div>
+  `;
+
+  // Custom search option if query is not an exact match to any item
+  if (q && !matches.some((m) => m.toLowerCase() === q)) {
+    const safeQ = query.replace(/"/g, "&quot;");
+    html += `
+      <div class="px-3 py-2 text-blue-700 bg-blue-50/80 hover:bg-blue-100 cursor-pointer flex items-center justify-between font-semibold transition-colors" data-prodi-val="${safeQ}">
+        <span class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px] text-blue-600">search</span>
+          <span>Cari prodi: "<span class="underline">${safeQ}</span>"</span>
+        </span>
+        <span class="text-[10px] uppercase font-bold text-blue-600 bg-white border border-blue-200 px-1.5 py-0.5 rounded shadow-2xs">Terapkan</span>
+      </div>
+    `;
+  }
+
+  if (matches.length > 0) {
+    matches.forEach((p) => {
+      const isSelected = (state.filters.studyProgram || "").toLowerCase() === p.toLowerCase();
+      let displayHtml = p;
+      if (q) {
+        const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
+        displayHtml = p.replace(regex, '<mark class="bg-amber-100 text-slate-900 font-bold px-0.5 rounded">$1</mark>');
+      }
+
+      html += `
+        <div class="px-3 py-2 text-slate-700 hover:bg-slate-100 cursor-pointer flex items-center justify-between transition-colors ${isSelected ? "bg-blue-50 font-semibold text-blue-700" : ""}" data-prodi-val="${p.replace(/"/g, "&quot;")}">
+          <span class="truncate">${displayHtml}</span>
+          ${isSelected ? '<span class="material-symbols-outlined text-[16px] text-blue-600">check</span>' : ''}
+        </div>
+      `;
+    });
+  }
+
+  dropdown.innerHTML = html;
+  dropdown.classList.remove("hidden");
+
+  dropdown.querySelectorAll("[data-prodi-val]").forEach((el) => {
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      const val = el.getAttribute("data-prodi-val") || "";
+      selectProdiValue(val);
+    });
   });
+}
+
+function selectProdiValue(val) {
+  const input = document.getElementById("filter-prodi");
+  const clearBtn = document.getElementById("filter-prodi-clear");
+  const dropdown = document.getElementById("prodi-suggestions-dropdown");
+
+  if (input) input.value = val;
+  if (clearBtn) clearBtn.classList.toggle("hidden", !val);
+  if (dropdown) dropdown.classList.add("hidden");
+
+  if (state.filters.studyProgram !== val) {
+    state.filters.studyProgram = val;
+    fetchVacancies(1);
+  }
 }
 
 // =============================================================================
@@ -331,24 +436,24 @@ window.changePage = function(newPage) {
 };
 
 function appendDynamicStudyPrograms(items) {
-  const select = document.getElementById("filter-prodi");
-  if (!select) return;
-
-  const existing = new Set(Array.from(select.options).map((o) => o.value.toLowerCase()));
+  if (!Array.isArray(items)) return;
+  const existingLower = new Set((state.availableProdis || []).map((p) => p.toLowerCase()));
+  let hasNew = false;
   items.forEach((item) => {
     if (Array.isArray(item.studyPrograms)) {
       item.studyPrograms.forEach((sp) => {
         const clean = (sp || "").trim();
-        if (clean && clean.toLowerCase() !== "semua" && !clean.toLowerCase().includes("semua jurusan") && !existing.has(clean.toLowerCase())) {
-          existing.add(clean.toLowerCase());
-          const opt = document.createElement("option");
-          opt.value = clean;
-          opt.textContent = clean;
-          select.appendChild(opt);
+        if (clean && !clean.toLowerCase().includes("semua") && !existingLower.has(clean.toLowerCase())) {
+          existingLower.add(clean.toLowerCase());
+          state.availableProdis.push(clean);
+          hasNew = true;
         }
       });
     }
   });
+  if (hasNew) {
+    state.availableProdis.sort((a, b) => a.localeCompare(b));
+  }
 }
 
 // =============================================================================
@@ -555,7 +660,11 @@ window.removeFilterTag = function(key) {
   } else if (key === "studyProgram") {
     state.filters.studyProgram = "";
     const el = document.getElementById("filter-prodi");
-    if (el) el.selectedIndex = 0;
+    if (el) el.value = "";
+    const clearBtn = document.getElementById("filter-prodi-clear");
+    if (clearBtn) clearBtn.classList.add("hidden");
+    const dropdown = document.getElementById("prodi-suggestions-dropdown");
+    if (dropdown) dropdown.classList.add("hidden");
   } else if (key === "education") {
     state.filters.education = "";
     const el = document.getElementById("filter-education");
@@ -885,12 +994,58 @@ function setupEventListeners() {
     });
   }
 
-  // 4. Prodi filter
-  const prodiSelect = document.getElementById("filter-prodi");
-  if (prodiSelect) {
-    prodiSelect.addEventListener("change", (e) => {
-      state.filters.studyProgram = e.target.value;
-      fetchVacancies(1);
+  // 4. Prodi filter (Typeable Combobox with Search & Suggestions)
+  const prodiInput = document.getElementById("filter-prodi");
+  const prodiClear = document.getElementById("filter-prodi-clear");
+  const prodiDropdown = document.getElementById("prodi-suggestions-dropdown");
+  let prodiDebounceTimer = null;
+
+  if (prodiInput) {
+    prodiInput.addEventListener("focus", () => {
+      renderProdiSuggestions(prodiInput.value);
+    });
+
+    prodiInput.addEventListener("input", (e) => {
+      const val = e.target.value;
+      if (prodiClear) prodiClear.classList.toggle("hidden", !val);
+      renderProdiSuggestions(val);
+
+      clearTimeout(prodiDebounceTimer);
+      prodiDebounceTimer = setTimeout(() => {
+        const trimmed = val.trim();
+        if (state.filters.studyProgram !== trimmed) {
+          state.filters.studyProgram = trimmed;
+          fetchVacancies(1);
+        }
+      }, 450);
+    });
+
+    prodiInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        clearTimeout(prodiDebounceTimer);
+        const trimmed = prodiInput.value.trim();
+        if (prodiDropdown) prodiDropdown.classList.add("hidden");
+        if (state.filters.studyProgram !== trimmed) {
+          state.filters.studyProgram = trimmed;
+          fetchVacancies(1);
+        }
+      } else if (e.key === "Escape") {
+        if (prodiDropdown) prodiDropdown.classList.add("hidden");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      const container = document.getElementById("prodi-filter-container");
+      if (container && !container.contains(e.target)) {
+        if (prodiDropdown) prodiDropdown.classList.add("hidden");
+      }
+    });
+  }
+
+  if (prodiClear) {
+    prodiClear.addEventListener("click", () => {
+      selectProdiValue("");
     });
   }
 
@@ -943,7 +1098,14 @@ window.resetAllFilters = function() {
   const kwInput = document.getElementById("filter-keyword");
   if (kwInput) kwInput.value = "";
 
-  const selects = ["filter-province", "filter-city", "filter-prodi", "filter-education", "filter-company-type"];
+  const prodiInput = document.getElementById("filter-prodi");
+  if (prodiInput) prodiInput.value = "";
+  const prodiClear = document.getElementById("filter-prodi-clear");
+  if (prodiClear) prodiClear.classList.add("hidden");
+  const prodiDropdown = document.getElementById("prodi-suggestions-dropdown");
+  if (prodiDropdown) prodiDropdown.classList.add("hidden");
+
+  const selects = ["filter-province", "filter-city", "filter-education", "filter-company-type"];
   selects.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.selectedIndex = 0;

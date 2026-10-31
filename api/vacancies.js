@@ -83,6 +83,19 @@ export default async function handler(req, res) {
       });
     }
 
+    if (prodi && prodi.toLowerCase() !== "semua") {
+      const pLower = prodi.toLowerCase().trim();
+      normalizedItems = normalizedItems.filter((v) => {
+        if (!v.studyPrograms || !v.studyPrograms.length) return true;
+        const matchesProdi = v.studyPrograms.some((sp) => {
+          const sLower = (sp || "").toLowerCase().trim();
+          return sLower.includes(pLower) || pLower.includes(sLower) || sLower.includes("semua");
+        });
+        const titleMatch = (v.title || "").toLowerCase().includes(pLower);
+        return matchesProdi || titleMatch;
+      });
+    }
+
     const responsePayload = {
       success: true,
       source: result.source,
