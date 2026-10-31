@@ -35,6 +35,14 @@ const state = {
   bookmarks: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "bookmarks")) || [],
   savedVacanciesMap: JSON.parse(localStorage.getItem(STORAGE_PREFIX + "saved_items")) || {},
   regionsData: [],
+
+  radar: {
+    isOpen: false,
+    activeKeywords: ["developer", "devops", "programmer"],
+    activeCities: ["Semua DKI Jakarta", "Bandung Raya"],
+    isScanning: false,
+    isRadarActive: false,
+  },
 };
 
 let searchDebounceTimer = null;
@@ -46,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   loadRegionsAndFilters();
   syncSavedVacancies();
+  initRadarUI();
   fetchVacancies(1);
   updateProfileBadge();
   updateSavedPill();
@@ -64,6 +73,7 @@ async function loadRegionsAndFilters() {
         populateProvinceDropdown();
         populateCityDropdown();
         populateProdiDropdown(json.data.studyPrograms);
+        populateRadarCitySelect();
       }
     }
   } catch (err) {
@@ -231,7 +241,7 @@ async function fetchVacancies(page = 1, append = false) {
 function updatePaginationUI() {
   const paginationControls = document.getElementById("pagination-controls");
   if (paginationControls) {
-    paginationControls.style.display = state.filters.onlySaved ? "none" : "flex";
+    paginationControls.style.display = (state.filters.onlySaved || state.radar.isRadarActive) ? "none" : "flex";
   }
 
   const currentEl = document.getElementById("current-page-num");
@@ -736,7 +746,17 @@ function setupEventListeners() {
       if (e.key === "Enter") {
         e.preventDefault();
         clearTimeout(searchDebounceTimer);
-        state.filters.keyword = kwInput.value.trim();
+        const val = kwInput.value.trim();
+        if (val.includes(",")) {
+          const kws = val.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+          if (kws.length > 0) {
+            state.radar.activeKeywords = kws;
+            renderRadarActiveTags();
+            executeRadarSearch();
+            return;
+          }
+        }
+        state.filters.keyword = val;
         fetchVacancies(1);
       }
     });
@@ -1382,4 +1402,386 @@ window.openDetailModal = function(id) {
 window.closeDetailModal = function() {
   const modal = document.getElementById("detail-modal");
   if (modal) modal.classList.remove("open");
+};
+
+// =============================================================================
+// RADAR MULTI-SEARCH (IT & MULTI-KOTA CEPAT)
+// =============================================================================
+const IT_ROLE_PRESETS = [
+  { id: "web", label: "💻 Web & Software", keywords: ["developer", "programmer", "software engineer", "frontend", "backend"] },
+  { id: "devops", label: "☁️ DevOps & Cloud", keywords: ["devops", "cloud", "sysadmin", "infrastructure"] },
+  { id: "data", label: "📊 Data & AI", keywords: ["data analyst", "data engineer", "machine learning", "ai"] },
+  { id: "support", label: "🛡️ Cyber & Support", keywords: ["it support", "network engineer", "cyber security", "helpdesk"] },
+  { id: "mobile", label: "📱 Mobile App", keywords: ["mobile developer", "android", "flutter", "ios"] },
+  { id: "uiux", label: "🎨 UI/UX & System", keywords: ["ui/ux", "system analyst", "product design"] },
+  { id: "qa", label: "🧪 QA & Tester", keywords: ["qa", "quality assurance", "tester"] },
+];
+
+const CITY_CLUSTER_PRESETS = [
+  { id: "jkt", label: "🏢 Semua DKI Jakarta", name: "Semua DKI Jakarta" },
+  { id: "jbtbk", label: "🏙️ Jabodetabek", name: "Jabodetabek" },
+  { id: "bdg", label: "⛰️ Bandung Raya", name: "Bandung Raya" },
+  { id: "diy", label: "🎓 Jogja & Sleman", name: "Yogyakarta & Sleman" },
+  { id: "sby", label: "🚢 Surabaya & Sidoarjo", name: "Surabaya & Sidoarjo" },
+  { id: "smg", label: "🏛️ Semarang & Solo", name: "Semarang & Solo" },
+  { id: "bali", label: "🌴 Bali / Denpasar", name: "Bali / Denpasar" },
+  { id: "medan", label: "📍 Medan", name: "Kota Medan" },
+  { id: "malang", label: "📍 Malang", name: "Kota Malang" },
+  { id: "mks", label: "📍 Makassar", name: "Kota Makassar" },
+];
+
+window.toggleRadarPanel = function () {
+  state.radar.isOpen = !state.radar.isOpen;
+  const panel = document.getElementById("radar-panel");
+  const chevron = document.getElementById("radar-chevron");
+  const label = document.getElementById("radar-toggle-label");
+  if (panel) {
+    if (state.radar.isOpen) {
+      panel.classList.remove("hidden");
+      if (chevron) chevron.style.transform = "rotate(180deg)";
+      if (label) label.textContent = "Tutup Radar";
+    } else {
+      panel.classList.add("hidden");
+      if (chevron) chevron.style.transform = "rotate(0deg)";
+      if (label) label.textContent = "Buka Radar";
+    }
+  }
+};
+
+function initRadarUI() {
+  renderRadarRoleChips();
+  renderRadarCityChips();
+  renderRadarActiveTags();
+  updateRadarSummaryText();
+
+  // Custom keyword input listener
+  const customKwInput = document.getElementById("radar-custom-keyword-input");
+  if (customKwInput) {
+    customKwInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === ",") {
+        e.preventDefault();
+        const val = customKwInput.value.replace(/,/g, "").trim();
+        if (val) {
+          addRadarKeyword(val);
+          customKwInput.value = "";
+        }
+      }
+    });
+  }
+}
+
+function renderRadarRoleChips() {
+  const container = document.getElementById("radar-role-chips");
+  if (!container) return;
+
+  container.innerHTML = IT_ROLE_PRESETS.map((p) => {
+    const isActive = p.keywords.some((k) => state.radar.activeKeywords.includes(k));
+    return `
+      <button 
+        type="button" 
+        onclick="toggleITPreset('${p.id}')" 
+        class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          isActive
+            ? "bg-blue-600 text-white shadow-xs border border-blue-600"
+            : "bg-white text-slate-700 border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50"
+        }">
+        ${p.label}
+      </button>
+    `;
+  }).join("");
+}
+
+function renderRadarCityChips() {
+  const container = document.getElementById("radar-city-chips");
+  if (!container) return;
+
+  container.innerHTML = CITY_CLUSTER_PRESETS.map((c) => {
+    const isActive = state.radar.activeCities.includes(c.name);
+    return `
+      <button 
+        type="button" 
+        onclick="toggleCityCluster('${c.name}')" 
+        class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+          isActive
+            ? "bg-indigo-600 text-white shadow-xs border border-indigo-600"
+            : "bg-white text-slate-700 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50"
+        }">
+        ${c.label}
+      </button>
+    `;
+  }).join("");
+}
+
+function renderRadarActiveTags() {
+  // Keywords tags
+  const kwContainer = document.getElementById("radar-keyword-tags");
+  if (kwContainer) {
+    kwContainer.innerHTML = state.radar.activeKeywords.map((k) => `
+      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+        <span>${k}</span>
+        <button type="button" onclick="removeRadarKeyword('${k}')" class="hover:text-rose-600 transition-colors cursor-pointer text-sm leading-none">&times;</button>
+      </span>
+    `).join("");
+  }
+
+  // Cities tags
+  const cityContainer = document.getElementById("radar-city-tags");
+  const emptyHint = document.getElementById("radar-city-empty-hint");
+  if (cityContainer) {
+    if (state.radar.activeCities.length > 0) {
+      if (emptyHint) emptyHint.classList.add("hidden");
+      cityContainer.innerHTML = state.radar.activeCities.map((c) => `
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+          <span>${c}</span>
+          <button type="button" onclick="removeRadarCity('${c}')" class="hover:text-rose-600 transition-colors cursor-pointer text-sm leading-none">&times;</button>
+        </span>
+      `).join("");
+    } else {
+      if (emptyHint) emptyHint.classList.remove("hidden");
+      cityContainer.innerHTML = "";
+    }
+  }
+
+  renderRadarRoleChips();
+  renderRadarCityChips();
+  updateRadarSummaryText();
+}
+
+function updateRadarSummaryText() {
+  const kwCountEl = document.getElementById("radar-kw-count");
+  const cityCountEl = document.getElementById("radar-city-count");
+  if (kwCountEl) kwCountEl.textContent = state.radar.activeKeywords.length || "0";
+  if (cityCountEl) {
+    cityCountEl.textContent = state.radar.activeCities.length > 0 ? `${state.radar.activeCities.length} Wilayah` : "Semua";
+  }
+}
+
+window.addRadarKeyword = function (kw) {
+  const clean = kw.trim().toLowerCase();
+  if (clean && !state.radar.activeKeywords.includes(clean)) {
+    state.radar.activeKeywords.push(clean);
+    renderRadarActiveTags();
+  }
+};
+
+window.removeRadarKeyword = function (kw) {
+  state.radar.activeKeywords = state.radar.activeKeywords.filter((k) => k !== kw);
+  renderRadarActiveTags();
+};
+
+window.toggleITPreset = function (presetId) {
+  const preset = IT_ROLE_PRESETS.find((p) => p.id === presetId);
+  if (!preset) return;
+
+  const hasAll = preset.keywords.every((k) => state.radar.activeKeywords.includes(k));
+  if (hasAll) {
+    state.radar.activeKeywords = state.radar.activeKeywords.filter((k) => !preset.keywords.includes(k));
+  } else {
+    preset.keywords.forEach((k) => {
+      if (!state.radar.activeKeywords.includes(k)) {
+        state.radar.activeKeywords.push(k);
+      }
+    });
+  }
+  renderRadarActiveTags();
+};
+
+window.selectAllITRoles = function () {
+  IT_ROLE_PRESETS.forEach((p) => {
+    p.keywords.forEach((k) => {
+      if (!state.radar.activeKeywords.includes(k)) {
+        state.radar.activeKeywords.push(k);
+      }
+    });
+  });
+  renderRadarActiveTags();
+};
+
+window.clearRadarKeywords = function () {
+  state.radar.activeKeywords = [];
+  renderRadarActiveTags();
+};
+
+window.toggleCityCluster = function (cityName) {
+  const idx = state.radar.activeCities.indexOf(cityName);
+  if (idx === -1) {
+    state.radar.activeCities.push(cityName);
+  } else {
+    state.radar.activeCities.splice(idx, 1);
+  }
+  renderRadarActiveTags();
+};
+
+window.addCityFromDropdown = function (selectEl) {
+  const val = selectEl.value;
+  if (val && !state.radar.activeCities.includes(val)) {
+    state.radar.activeCities.push(val);
+    renderRadarActiveTags();
+  }
+  selectEl.selectedIndex = 0;
+};
+
+window.removeRadarCity = function (cityName) {
+  state.radar.activeCities = state.radar.activeCities.filter((c) => c !== cityName);
+  renderRadarActiveTags();
+};
+
+window.clearRadarCities = function () {
+  state.radar.activeCities = [];
+  renderRadarActiveTags();
+};
+
+window.resetRadarFilters = function () {
+  state.radar.activeKeywords = ["developer", "devops", "programmer"];
+  state.radar.activeCities = ["Semua DKI Jakarta", "Bandung Raya"];
+  renderRadarActiveTags();
+};
+
+function populateRadarCitySelect() {
+  const select = document.getElementById("radar-add-city-select");
+  if (!select || !state.regionsData) return;
+
+  select.innerHTML = `<option value="">+ Tambah Kota/Kabupaten Lain...</option>`;
+  const allCities = [];
+  state.regionsData.forEach((r) => {
+    if (r.cities) allCities.push(...r.cities);
+  });
+
+  const unique = Array.from(new Set(allCities)).sort();
+  unique.forEach((cityName) => {
+    const opt = document.createElement("option");
+    opt.value = cityName;
+    opt.textContent = cityName;
+    select.appendChild(opt);
+  });
+}
+
+function isCityMatch(v, selectedCities) {
+  if (!selectedCities || selectedCities.length === 0) return true;
+  const loc = (v.location || "").toLowerCase();
+  const city = (v.cityName || "").toLowerCase();
+  const addr = (v.address || "").toLowerCase();
+  const text = `${loc} ${city} ${addr}`;
+
+  return selectedCities.some((target) => {
+    const t = target.toLowerCase().trim();
+    if (t === "semua dki jakarta" || t === "dki jakarta" || t === "jakarta") {
+      return text.includes("jakarta") || text.includes("dki");
+    }
+    if (t === "jabodetabek") {
+      return text.includes("jakarta") || text.includes("bogor") || text.includes("depok") || text.includes("tangerang") || text.includes("bekasi");
+    }
+    if (t === "bandung raya" || t === "bandung") {
+      return text.includes("bandung") || text.includes("cimahi");
+    }
+    if (t === "yogyakarta & sleman" || t === "yogyakarta" || t === "jogja" || t === "sleman") {
+      return text.includes("yogyakarta") || text.includes("jogja") || text.includes("sleman") || text.includes("bantul") || text.includes("diy");
+    }
+    if (t === "surabaya & sidoarjo" || t === "surabaya") {
+      return text.includes("surabaya") || text.includes("sidoarjo") || text.includes("gresik");
+    }
+    if (t === "semarang & solo" || t === "semarang") {
+      return text.includes("semarang") || text.includes("surakarta") || text.includes("solo");
+    }
+    if (t === "bali / denpasar" || t === "bali") {
+      return text.includes("bali") || text.includes("denpasar") || text.includes("badung");
+    }
+    const cleanT = t.replace(/^(kota adm\.|kota|kab\.|kabupaten)\s+/i, "");
+    return text.includes(cleanT);
+  });
+}
+
+function updateRadarProgress(label, percent) {
+  const bar = document.getElementById("radar-progress-bar");
+  const percentEl = document.getElementById("radar-progress-percent");
+  const labelEl = document.getElementById("radar-progress-label");
+  if (bar) bar.style.width = `${percent}%`;
+  if (percentEl) percentEl.textContent = `${percent}%`;
+  if (labelEl) labelEl.textContent = label;
+}
+
+window.executeRadarSearch = async function () {
+  if (state.radar.isScanning) return;
+
+  const keywords = state.radar.activeKeywords.length > 0 ? state.radar.activeKeywords : ["developer", "it", "programmer"];
+  const cities = state.radar.activeCities;
+
+  state.radar.isScanning = true;
+  const progressContainer = document.getElementById("radar-progress-bar-container");
+  const btnExecute = document.getElementById("btn-execute-radar");
+  if (progressContainer) progressContainer.classList.remove("hidden");
+  if (btnExecute) {
+    btnExecute.disabled = true;
+    btnExecute.innerHTML = `<span class="material-symbols-outlined animate-spin text-[16px]">sync</span><span>Memindai...</span>`;
+  }
+
+  renderSkeleton();
+
+  let rawAllItems = [];
+  const total = keywords.length;
+
+  for (let i = 0; i < keywords.length; i++) {
+    const kw = keywords[i];
+    updateRadarProgress(`Memindai kata kunci '${kw}' (${i + 1}/${total})...`, Math.round(((i + 0.3) / total) * 100));
+    try {
+      const res = await fetch(`/api/vacancies?keyword=${encodeURIComponent(kw)}&page=1`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.items)) {
+          rawAllItems.push(...json.items);
+        }
+      }
+    } catch (_) {}
+    updateRadarProgress(`Selesai memindai '${kw}' (${i + 1}/${total})`, Math.round(((i + 1) / total) * 100));
+  }
+
+  // Deduplicate by ID
+  const seen = new Set();
+  let uniqueItems = [];
+  for (const item of rawAllItems) {
+    if (item && item.id && !seen.has(item.id)) {
+      seen.add(item.id);
+      uniqueItems.push(item);
+    }
+  }
+
+  // Filter by selected cities if defined
+  if (cities.length > 0) {
+    uniqueItems = uniqueItems.filter((item) => isCityMatch(item, cities));
+  }
+
+  // Enrich with user match
+  state.vacancies = uniqueItems.map(enrichVacancyWithUserMatch);
+  state.radar.isRadarActive = true;
+  state.totalVacancies = state.vacancies.length;
+  state.currentPage = 1;
+  state.totalPages = 1;
+
+  // Finish progress
+  if (progressContainer) progressContainer.classList.add("hidden");
+  if (btnExecute) {
+    btnExecute.disabled = false;
+    btnExecute.innerHTML = `<span class="material-symbols-outlined text-[16px]">radar</span><span>Jalankan Radar Multi-Cari</span>`;
+  }
+  state.radar.isScanning = false;
+
+  // Show active radar banner
+  const banner = document.getElementById("active-radar-banner");
+  const bannerText = document.getElementById("active-radar-banner-text");
+  if (banner && bannerText) {
+    const cityText = cities.length > 0 ? cities.join(", ") : "Semua Wilayah";
+    bannerText.innerHTML = `Radar IT Aktif: Ditemukan <strong>${state.vacancies.length}</strong> lowongan unik untuk kata kunci [${keywords.slice(0, 5).join(", ")}${keywords.length > 5 ? '...' : ''}] di wilayah [${cityText}]`;
+    banner.classList.remove("hidden");
+  }
+
+  renderVacancies();
+  updatePaginationUI();
+  window.scrollTo({ top: 380, behavior: "smooth" });
+};
+
+window.exitRadarMode = function () {
+  state.radar.isRadarActive = false;
+  const banner = document.getElementById("active-radar-banner");
+  if (banner) banner.classList.add("hidden");
+  fetchVacancies(1);
 };

@@ -207,6 +207,144 @@
         </div>
       </div>
 
+      <!-- =======================================================================
+           RADAR IT & MULTI-KOTA CEPAT (MULTI-SEARCH)
+           ======================================================================= -->
+      <div class="mb-4 bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-slate-50 border border-blue-200/90 rounded-xl p-3.5 sm:p-4 shadow-2xs">
+        <div class="flex items-center justify-between gap-3 cursor-pointer select-none" onclick="toggleRadarPanel()">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+              ⚡
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs sm:text-sm font-bold text-slate-900">Radar IT &amp; Multi-Kota Cepat</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white uppercase tracking-wider">Multi-Search</span>
+              </div>
+              <p class="text-[11px] text-slate-500 font-normal">Cari lowongan IT (Developer, DevOps, Data, dll) di banyak kota/kabupaten sekaligus dalam 1 klik.</p>
+            </div>
+          </div>
+          <button type="button" id="btn-toggle-radar" class="px-2.5 py-1 bg-white border border-blue-200 hover:border-blue-300 text-blue-700 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-2xs transition-all shrink-0">
+            <span id="radar-toggle-label">Buka Radar</span>
+            <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="radar-chevron">expand_more</span>
+          </button>
+        </div>
+
+        <!-- Radar Expandable Controls -->
+        <div id="radar-panel" class="hidden mt-4 pt-4 border-t border-blue-200/60 flex flex-col gap-3.5">
+          
+          <!-- Row A: Multi-Kata Kunci IT -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                <span>1. Pilih Role &amp; Kata Kunci IT</span>
+                <span class="text-slate-400 font-normal">(Bisa pilih lebih dari satu)</span>
+              </span>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="selectAllITRoles()" class="text-[11px] font-semibold text-blue-600 hover:text-blue-800">
+                  Pilih Semua IT
+                </button>
+                <span class="text-slate-300">&bull;</span>
+                <button type="button" onclick="clearRadarKeywords()" class="text-[11px] font-semibold text-slate-500 hover:text-slate-700">
+                  Hapus Semua
+                </button>
+              </div>
+            </div>
+
+            <!-- IT Preset Chips -->
+            <div class="flex flex-wrap gap-1.5 mb-2" id="radar-role-chips">
+              <!-- Injected dynamically in app.js -->
+            </div>
+
+            <!-- Custom Keyword Input & Active Tags -->
+            <div class="flex flex-wrap items-center gap-1.5 p-2 bg-white rounded-lg border border-slate-200 min-h-[38px]">
+              <div id="radar-keyword-tags" class="flex flex-wrap items-center gap-1.5"></div>
+              <input 
+                type="text" 
+                id="radar-custom-keyword-input" 
+                placeholder="+ Ketik kata kunci lain lalu tekan Enter (misal: laravel, react, python)..." 
+                class="flex-1 min-w-[200px] border-none p-1 text-xs text-slate-800 focus:outline-none focus:ring-0 placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          <!-- Row B: Multi-Kota / Kabupaten -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                <span>2. Pilih Kota / Wilayah Penempatan Berbarengan</span>
+                <span class="text-slate-400 font-normal">(Bisa pilih banyak kota)</span>
+              </span>
+              <button type="button" onclick="clearRadarCities()" class="text-[11px] font-semibold text-slate-500 hover:text-slate-800">
+                Reset Wilayah
+              </button>
+            </div>
+
+            <!-- City Preset Chips -->
+            <div class="flex flex-wrap gap-1.5 mb-2" id="radar-city-chips">
+              <!-- Injected dynamically in app.js -->
+            </div>
+
+            <!-- City Selector Dropdown & Active Tags -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div class="flex-1 flex flex-wrap items-center gap-1.5 p-2 bg-white rounded-lg border border-slate-200 min-h-[38px]" id="radar-city-tags-box">
+                <div id="radar-city-tags" class="flex flex-wrap items-center gap-1.5"></div>
+                <span id="radar-city-empty-hint" class="text-xs text-slate-400 p-1">Semua wilayah aktif (atau klik salah satu wilayah di atas)</span>
+              </div>
+
+              <!-- Select to add any other city from regions.json -->
+              <div class="relative w-full sm:w-64 shrink-0">
+                <select id="radar-add-city-select" onchange="addCityFromDropdown(this)" class="w-full bg-white border border-slate-200 hover:border-slate-300 rounded-lg py-2 px-3 pr-8 text-xs text-slate-800 font-medium appearance-none cursor-pointer focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                  <option value="">+ Tambah Kota/Kabupaten Lain...</option>
+                </select>
+                <span class="material-symbols-outlined text-slate-400 absolute right-2.5 top-2 pointer-events-none text-[18px]">add</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row C: Action Bar -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-blue-200/60">
+            <div class="text-xs text-slate-600 font-medium flex items-center gap-2" id="radar-summary-text">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Siap memindai <strong id="radar-kw-count">3</strong> kata kunci IT di <strong id="radar-city-count">Semua</strong> wilayah.</span>
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button type="button" onclick="resetRadarFilters()" class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
+                Reset
+              </button>
+              <button type="button" onclick="executeRadarSearch()" id="btn-execute-radar" class="flex-1 sm:flex-none px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98">
+                <span class="material-symbols-outlined text-[16px]">radar</span>
+                <span>Jalankan Radar Multi-Cari</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Scanning Progress -->
+          <div id="radar-progress-bar-container" class="hidden flex flex-col gap-1.5 pt-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-blue-700">
+              <span id="radar-progress-label">Memindai lowongan IT...</span>
+              <span id="radar-progress-percent">0%</span>
+            </div>
+            <div class="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+              <div id="radar-progress-bar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Active Radar Banner (shows when radar results are active) -->
+      <div id="active-radar-banner" class="hidden mb-4 p-3.5 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+        <div class="flex items-center gap-2 text-xs text-blue-900 font-medium">
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-bold">✓</span>
+          <span id="active-radar-banner-text">Hasil Radar Multi-Pencarian Aktif</span>
+        </div>
+        <button type="button" onclick="exitRadarMode()" class="px-3 py-1 bg-white hover:bg-slate-50 border border-blue-200 text-blue-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs">
+          Tutup &amp; Kembali ke Pencarian Normal
+        </button>
+      </div>
+
       <!-- Filter Row 1: Wilayah Penempatan (Provinsi -> Kabupaten/Kota) -->
       <div class="mb-3">
         <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
