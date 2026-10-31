@@ -1,7 +1,7 @@
 /**
  * Endpoint: GET /api/vacancies
  */
-import { fetchMagangHubVacancies } from "../_lib/maganghub.js";
+import { fetchMagangHubVacancies, resolveCityOption } from "../_lib/maganghub.js";
 import { normalizeVacancy } from "../_lib/normalize.js";
 import { getCache, setCache } from "../_lib/cache.js";
 import minimumWages from "../../data/minimum-wages.json" assert { type: "json" };
@@ -13,14 +13,23 @@ export async function onRequestGet(context) {
   const sort = url.searchParams.get("sort") || "least_applicants";
   const province = (url.searchParams.get("province") || "").trim();
   const city = (url.searchParams.get("city") || "").trim();
+  const cities = (url.searchParams.get("cities") || "").trim();
   const kecamatan = (url.searchParams.get("kecamatan") || "").trim();
   const prodi = (url.searchParams.get("prodi") || "").trim();
   const education = (url.searchParams.get("education") || "").trim();
   const companyType = (url.searchParams.get("companyType") || "").trim();
 
+  // Resolve city options to Kemnaker city_id format
+  const cityList = cities ? cities.split(",").map(c => c.trim()).filter(Boolean) : (city ? [city] : []);
+  const cityIds = [];
+  for (const c of cityList) {
+    const resolved = await resolveCityOption(c);
+    if (resolved) cityIds.push(resolved);
+  }
+
   // Resolve best search term for Kemnaker
   let resolvedQuery = keyword;
-  if (!resolvedQuery) {
+  if (!resolvedQuery && cityIds.length === 0) {
     if (kecamatan) {
       resolvedQuery = kecamatan.replace(/^kecamatan\s+/i, "").trim();
     } else if (city) {
@@ -32,7 +41,8 @@ export async function onRequestGet(context) {
     }
   }
 
-  const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${province}:${city}:${prodi}:${education}:${companyType}`;
+  const cityIdsKey = cityIds.map(c => c.id).join(",");
+  const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${cityIdsKey}:${province}:${city}:${prodi}:${education}:${companyType}`;
   const cached = getCache(cacheKey);
   if (cached) {
     return new Response(JSON.stringify(cached), {
@@ -40,7 +50,7 @@ export async function onRequestGet(context) {
     });
   }
 
-  const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort });
+  const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort, cityIds });
 
   if (!result.success) {
     return new Response(

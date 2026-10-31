@@ -106,6 +106,17 @@
 </head>
 <body class="text-slate-800 antialiased">
 
+  <!-- Fixed Top Global Loading Bar & Floating Indicator -->
+  <div id="global-page-loader" class="fixed top-0 left-0 right-0 z-50 pointer-events-none transition-all duration-200 opacity-0 -translate-y-full">
+    <div class="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 animate-pulse"></div>
+    <div class="flex justify-center pt-2">
+      <div class="px-4 py-1.5 bg-slate-900/90 text-white backdrop-blur text-xs font-semibold rounded-full shadow-lg flex items-center gap-2">
+        <span class="material-symbols-outlined text-[15px] animate-spin text-blue-400">sync</span>
+        <span id="global-page-loader-text">Mengambil lowongan dari Kemnaker...</span>
+      </div>
+    </div>
+  </div>
+
   <!-- =========================================================================
        TOP NAVIGATION BAR
        ========================================================================= -->

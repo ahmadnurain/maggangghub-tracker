@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { fetchMagangHubVacancies, fetchVacancyDetail } from "./functions/_lib/maganghub.js";
+import { fetchMagangHubVacancies, fetchVacancyDetail, resolveCityOption } from "./functions/_lib/maganghub.js";
 import { normalizeVacancy } from "./functions/_lib/normalize.js";
 import { getCache, setCache } from "./functions/_lib/cache.js";
 
@@ -89,14 +89,23 @@ const server = http.createServer(async (req, res) => {
       const sort = parsedUrl.searchParams.get("sort") || "least_applicants";
       const province = (parsedUrl.searchParams.get("province") || "").trim();
       const city = (parsedUrl.searchParams.get("city") || "").trim();
+      const cities = (parsedUrl.searchParams.get("cities") || "").trim();
       const kecamatan = (parsedUrl.searchParams.get("kecamatan") || "").trim();
       const prodi = (parsedUrl.searchParams.get("prodi") || "").trim();
       const education = (parsedUrl.searchParams.get("education") || "").trim();
       const companyType = (parsedUrl.searchParams.get("companyType") || "").trim();
 
+      // Resolve city options to Kemnaker city_id format
+      const cityList = cities ? cities.split(",").map(c => c.trim()).filter(Boolean) : (city ? [city] : []);
+      const cityIds = [];
+      for (const c of cityList) {
+        const resolved = await resolveCityOption(c);
+        if (resolved) cityIds.push(resolved);
+      }
+
       // Resolve best search term for Kemnaker / Pantauloker
       let resolvedQuery = keyword;
-      if (!resolvedQuery) {
+      if (!resolvedQuery && cityIds.length === 0) {
         if (kecamatan) {
           resolvedQuery = kecamatan.replace(/^kecamatan\s+/i, "").trim();
         } else if (city) {
@@ -108,13 +117,14 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
-      const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${province}:${city}:${prodi}:${education}:${companyType}`;
+      const cityIdsKey = cityIds.map(c => c.id).join(",");
+      const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${cityIdsKey}:${province}:${city}:${prodi}:${education}:${companyType}`;
       const cached = getCache(cacheKey);
       if (cached) {
         return jsonResponse(cached, 200, { "X-Cache": "HIT" });
       }
 
-      const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort });
+      const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort, cityIds });
       if (!result.success) {
         return jsonResponse(
           {

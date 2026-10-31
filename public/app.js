@@ -1856,12 +1856,7 @@ window.executeRadarSearch = async function () {
   } else if (cities.length > 0) {
     // User wants to search strictly by city/wilayah (NO IT keywords forced!)
     isCityOnly = true;
-    cities.forEach((c) => {
-      const clean = getCitySearchQuery(c);
-      if (clean && !searchQueries.includes(clean)) {
-        searchQueries.push(clean);
-      }
-    });
+    searchQueries = [""];
   } else {
     // Neither selected, load normal feed
     state.radar.isRadarActive = false;
@@ -1896,19 +1891,27 @@ window.executeRadarSearch = async function () {
     }
 
     const q = searchQueries[i];
-    const label = isCityOnly ? `Memindai wilayah '${q}'` : `Memindai kata kunci '${q}'`;
+    const label = isCityOnly ? `Memindai wilayah [${cities.join(', ')}]` : `Memindai kata kunci '${q}'`;
     updateRadarProgress(`${label} (${i + 1}/${total})...`, Math.round(((i + 0.3) / total) * 100));
 
+    let queryUrl = `/api/vacancies?page=1`;
+    if (q) queryUrl += `&keyword=${encodeURIComponent(q)}`;
+    if (cities.length > 0) queryUrl += `&cities=${encodeURIComponent(cities.join(","))}`;
+
     try {
-      const res = await fetch(`/api/vacancies?keyword=${encodeURIComponent(q)}&page=1`);
+      const res = await fetch(queryUrl);
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.items)) {
           rawAllItems.push(...json.items);
+          if (json.meta?.total && isCityOnly) {
+            state.totalVacancies = json.meta.total;
+            state.totalPages = json.meta.lastPage || Math.max(1, Math.ceil(json.meta.total / 18));
+          }
         }
       }
     } catch (_) {}
-    updateRadarProgress(`Selesai memindai '${q}' (${i + 1}/${total})`, Math.round(((i + 1) / total) * 100));
+    updateRadarProgress(`Selesai memindai (${i + 1}/${total})`, Math.round(((i + 1) / total) * 100));
   }
 
   if (radarRequestId !== currentSearchRequestId) {
@@ -1980,8 +1983,12 @@ window.loadMoreRadarVacancies = async function () {
 
   for (let i = 0; i < queries.length; i++) {
     const q = queries[i];
+    let queryUrl = `/api/vacancies?page=${page}`;
+    if (q) queryUrl += `&keyword=${encodeURIComponent(q)}`;
+    if (cities.length > 0) queryUrl += `&cities=${encodeURIComponent(cities.join(","))}`;
+
     try {
-      const res = await fetch(`/api/vacancies?keyword=${encodeURIComponent(q)}&page=${page}`);
+      const res = await fetch(queryUrl);
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.items)) {

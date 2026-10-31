@@ -22,11 +22,60 @@ export function parseRSCResponse(text) {
   }
 }
 
-export async function fetchMagangHubVacancies({ keyword = "", page = 1, sort = "least_applicants", timeout = 12000 }) {
+const FETCH_CITY_ACTION = "40e1c37678fa7370176b51628e8ed8cdd9eed9a303";
+const cityCache = new Map();
+
+export async function resolveCityOption(cityName, timeout = 7000) {
+  if (!cityName) return null;
+  const stripped = cityName.replace(/^(Kota Adm\.|Kota|Kab\.|Kabupaten)\s+/i, "").trim();
+  const searchName = stripped.charAt(0).toUpperCase() + stripped.slice(1);
+  const cacheKey = searchName.toLowerCase();
+  if (cityCache.has(cacheKey)) return cityCache.get(cacheKey);
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+
+    const res = await fetch("https://maganghub.kemnaker.go.id/magang-nasional/lowongan", {
+      method: "POST",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "Accept": "text/x-component",
+        "Next-Action": FETCH_CITY_ACTION,
+        "Content-Type": "text/plain;charset=UTF-8",
+        "Referer": "https://maganghub.kemnaker.go.id/magang-nasional/lowongan",
+        "Origin": "https://maganghub.kemnaker.go.id",
+      },
+      body: JSON.stringify([searchName]),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (!res.ok) return null;
+    const text = await res.text();
+    const marker = '1:{"data":';
+    const idx = text.indexOf(marker);
+    if (idx !== -1) {
+      const json = JSON.parse(text.slice(idx + 2).split("\n")[0]);
+      if (Array.isArray(json.data) && json.data.length > 0) {
+        const found = json.data.find((c) => c.name && c.name.toLowerCase().includes(cacheKey)) || json.data[0];
+        const resObj = { id: found.id, label: found.name };
+        cityCache.set(cacheKey, resObj);
+        return resObj;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
+export async function fetchMagangHubVacancies({ keyword = "", page = 1, sort = "least_applicants", cityIds = [], timeout = 20000 }) {
   // Strategy 1: Primary - Next.js Server Action
   try {
     const params = { page: Number(page) || 1, sort };
     if (keyword) params.keyword = keyword;
+    if (Array.isArray(cityIds) && cityIds.length > 0) {
+      params.city_id = cityIds;
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
@@ -40,14 +89,6 @@ export async function fetchMagangHubVacancies({ keyword = "", page = 1, sort = "
         "Content-Type": "text/plain;charset=UTF-8",
         "Referer": "https://maganghub.kemnaker.go.id/magang-nasional/lowongan",
         "Origin": "https://maganghub.kemnaker.go.id",
-        "sec-ch-ua": '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
-        "accept-language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
-        "priority": "u=1, i",
       },
       body: JSON.stringify([params]),
       signal: controller.signal,

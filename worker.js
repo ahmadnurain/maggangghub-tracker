@@ -1,4 +1,4 @@
-import { fetchMagangHubVacancies, fetchVacancyDetail } from "./functions/_lib/maganghub.js";
+import { fetchMagangHubVacancies, fetchVacancyDetail, resolveCityOption } from "./functions/_lib/maganghub.js";
 import { normalizeVacancy } from "./functions/_lib/normalize.js";
 import { getCache, setCache } from "./functions/_lib/cache.js";
 
@@ -79,13 +79,22 @@ export default {
         const sort = url.searchParams.get("sort") || "least_applicants";
         const province = (url.searchParams.get("province") || "").trim();
         const city = (url.searchParams.get("city") || "").trim();
+        const cities = (url.searchParams.get("cities") || "").trim();
         const kecamatan = (url.searchParams.get("kecamatan") || "").trim();
         const prodi = (url.searchParams.get("prodi") || "").trim();
         const educationFilter = (url.searchParams.get("education") || "").trim();
         const companyType = (url.searchParams.get("companyType") || "").trim();
 
+        // Resolve city options to Kemnaker city_id format
+        const cityList = cities ? cities.split(",").map(c => c.trim()).filter(Boolean) : (city ? [city] : []);
+        const cityIds = [];
+        for (const c of cityList) {
+          const resolved = await resolveCityOption(c);
+          if (resolved) cityIds.push(resolved);
+        }
+
         let resolvedQuery = keyword;
-        if (!resolvedQuery) {
+        if (!resolvedQuery && cityIds.length === 0) {
           if (kecamatan) {
             resolvedQuery = kecamatan.replace(/^kecamatan\s+/i, "").trim();
           } else if (city) {
@@ -97,13 +106,14 @@ export default {
           }
         }
 
-        const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${province}:${city}:${prodi}:${educationFilter}:${companyType}`;
+        const cityIdsKey = cityIds.map(c => c.id).join(",");
+        const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${cityIdsKey}:${province}:${city}:${prodi}:${educationFilter}:${companyType}`;
         const cached = getCache(cacheKey);
         if (cached) {
           return jsonResponse(cached, 200, { "X-Cache": "HIT" });
         }
 
-        const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort });
+        const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort, cityIds });
         if (!result.success) {
           return jsonResponse(
             {

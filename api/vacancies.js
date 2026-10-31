@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fetchMagangHubVacancies } from "../functions/_lib/maganghub.js";
+import { fetchMagangHubVacancies, resolveCityOption } from "../functions/_lib/maganghub.js";
 import { normalizeVacancy } from "../functions/_lib/normalize.js";
 import { getCache, setCache } from "../functions/_lib/cache.js";
 
@@ -17,13 +17,22 @@ export default async function handler(req, res) {
     const sort = query.sort || "least_applicants";
     const province = (query.province || "").trim();
     const city = (query.city || "").trim();
+    const cities = (query.cities || "").trim();
     const kecamatan = (query.kecamatan || "").trim();
     const prodi = (query.prodi || "").trim();
     const education = (query.education || "").trim();
     const companyType = (query.companyType || "").trim();
 
+    // Resolve city options to Kemnaker city_id format
+    const cityList = cities ? cities.split(",").map(c => c.trim()).filter(Boolean) : (city ? [city] : []);
+    const cityIds = [];
+    for (const c of cityList) {
+      const resolved = await resolveCityOption(c);
+      if (resolved) cityIds.push(resolved);
+    }
+
     let resolvedQuery = keyword;
-    if (!resolvedQuery) {
+    if (!resolvedQuery && cityIds.length === 0) {
       if (kecamatan) {
         resolvedQuery = kecamatan.replace(/^kecamatan\s+/i, "").trim();
       } else if (city) {
@@ -35,14 +44,15 @@ export default async function handler(req, res) {
       }
     }
 
-    const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${province}:${city}:${prodi}:${education}:${companyType}`;
+    const cityIdsKey = cityIds.map(c => c.id).join(",");
+    const cacheKey = `vacancies:${resolvedQuery}:${page}:${sort}:${cityIdsKey}:${province}:${city}:${prodi}:${education}:${companyType}`;
     const cached = getCache(cacheKey);
     if (cached) {
       res.setHeader("X-Cache", "HIT");
       return res.status(200).json(cached);
     }
 
-    const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort });
+    const result = await fetchMagangHubVacancies({ keyword: resolvedQuery, page, sort, cityIds });
     if (!result.success) {
       return res.status(502).json({
         success: false,
