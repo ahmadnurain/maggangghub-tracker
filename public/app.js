@@ -420,11 +420,33 @@ function renderVacancies() {
   // When "Tersimpan" filter is active, fetch from savedVacanciesMap directly
   if (state.filters.onlySaved) {
     items = state.bookmarks
-      .map((id) => state.savedVacanciesMap[id] || state.vacancies.find((v) => v.id === id))
+      .map((id) => {
+        if (state.savedVacanciesMap[id]) return state.savedVacanciesMap[id];
+        const inActive = state.vacancies.find((v) => v.id === id);
+        if (inActive) {
+          state.savedVacanciesMap[id] = inActive;
+          return inActive;
+        }
+        return {
+          id,
+          title: "Lowongan Tersimpan",
+          company: "Menyinkronkan info...",
+          companyType: "Perusahaan",
+          city: "Memuat dari Kemnaker...",
+          province: "",
+          quota: 1,
+          applicants: 0,
+          applicantsPerSlot: 0,
+          competition: "low",
+          skills: [],
+          sourceUrl: `https://maganghub.kemnaker.go.id/magang-nasional/lowongan/${id}`,
+          isSyncing: true,
+        };
+      })
       .filter(Boolean);
 
     // If some bookmarked items are not yet loaded into map, sync in background
-    if (items.length < state.bookmarks.length) {
+    if (state.bookmarks.some((id) => !state.savedVacanciesMap[id])) {
       syncSavedVacancies();
     }
   } else {
@@ -661,6 +683,12 @@ function createOriginalCardHTML(v) {
               ${instansiBadge}
             </span>
             ${interviewBadgeHtml}
+            ${v.isSyncing ? `
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                <span class="material-symbols-outlined text-[11px] animate-spin">sync</span>
+                <span>Sinkronisasi Kemnaker...</span>
+              </span>
+            ` : ''}
             ${v.matchScore > 0 ? `
               <span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
                 <span>CV ${v.matchScore}%</span>
@@ -1003,7 +1031,7 @@ window.toggleBookmark = function(id) {
 };
 
 window.shareVacancy = function(id) {
-  const v = state.vacancies.find((item) => item.id === id);
+  const v = state.vacancies.find((item) => item.id === id) || state.savedVacanciesMap[id];
   if (!v) return;
 
   if (navigator.share) {
@@ -1133,7 +1161,7 @@ window.applyQuickFilter = function(type) {
 // Detail Modal (Executive Dossier Redesign with Interview Pipeline & Transparency)
 // =============================================================================
 window.openDetailModal = function(id) {
-  const v = state.vacancies.find((item) => item.id === id);
+  const v = state.vacancies.find((item) => item.id === id) || state.savedVacanciesMap[id];
   if (!v) return;
 
   const modal = document.getElementById("detail-modal");
